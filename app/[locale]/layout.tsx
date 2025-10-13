@@ -29,9 +29,11 @@ export default async function LocaleLayout({
   return (
     <html lang={locale}>
       <head>
-        <title>Domain Management</title>
-        <meta name="description" content="优雅的域名管理工具" />
+        <title>域名管理工具 | Domain Management</title>
+        <meta name="description" content="优雅的域名管理工具，支持多注册商、到期提醒、多语言等功能" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="robots" content="noindex, nofollow" />
+        <link rel="icon" href="/favicon.ico" />
       </head>
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>

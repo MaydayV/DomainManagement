@@ -1,0 +1,33 @@
+# robots.txt - 禁止所有爬虫访问
+# 此为私人域名管理工具，禁止搜索引擎收录
+
+User-agent: *
+Disallow: /
+
+# 禁止所有搜索引擎
+User-agent: Googlebot
+Disallow: /
+
+User-agent: Bingbot  
+Disallow: /
+
+User-agent: Slurp
+Disallow: /
+
+User-agent: DuckDuckBot
+Disallow: /
+
+User-agent: Baiduspider
+Disallow: /
+
+User-agent: YandexBot
+Disallow: /
+
+User-agent: facebookexternalhit
+Disallow: /
+
+User-agent: Twitterbot
+Disallow: /
+
+# 不提供 sitemap
+# Sitemap: 

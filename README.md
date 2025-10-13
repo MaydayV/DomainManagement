@@ -1,17 +1,22 @@
-# 域名管理工具 | Domain Management
+# 🌍 域名管理工具 | Domain Management Tool
 
 <div align="center">
 
-![Domain Management](https://img.shields.io/badge/Domain-Management-blue?style=for-the-badge)
+![Domain Management](https://img.shields.io/badge/Domain-Management-6366F1?style=for-the-badge&logo=globe&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=for-the-badge&logo=tailwind-css)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-06B6D4?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Vercel KV](https://img.shields.io/badge/Vercel-KV-000?style=for-the-badge&logo=vercel&logoColor=white)
 
-优雅的域名管理工具，支持多注册商、到期提醒、多语言等功能
+**优雅的域名管理工具，支持多注册商、到期提醒、云端存储**
 
-[English](#english) | [中文](#中文)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/domain-management)
+
+[🚀 快速部署](#快速部署) | [📖 English](#english) | [🎯 功能特性](#功能特性)
 
 </div>
+
+---
 
 ---
 
@@ -87,10 +92,9 @@ pnpm install
 ```env
 # 访问密码（必须设置）
 ACCESS_PASSWORD=your_secure_password_here
-
-# 应用配置（可选）
-NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
+
+**注意**：生产环境使用 Vercel KV 存储，无需本地数据库配置。
 
 #### 4. 运行开发服务器
 
@@ -104,35 +108,63 @@ pnpm dev
 
 访问 [http://localhost:3000](http://localhost:3000)
 
-### 📦 部署到 Vercel
+## 🚀 快速部署
 
-#### 方式一：一键部署
+### 方式一：一键部署（推荐）
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/domain-management)
 
-#### 方式二：命令行部署
+点击按钮后：
+1. 导入 GitHub 仓库
+2. 创建 Vercel KV 数据库
+3. 设置访问密码
+4. 一键部署完成！
 
+### 方式二：手动部署
+
+#### Step 1: 推送到 GitHub
 ```bash
-# 安装 Vercel CLI
-npm i -g vercel
-
-# 登录
-vercel login
-
-# 部署
-vercel
-
-# 生产环境部署
-vercel --prod
+git init
+git add .
+git commit -m "Initial commit"
+git remote add origin <your-repo-url>
+git push -u origin main
 ```
 
-#### 配置环境变量
+#### Step 2: 在 Vercel 创建项目
+1. 访问 [vercel.com](https://vercel.com)
+2. 新建项目，选择你的仓库
+3. 点击 Deploy
 
-在 Vercel 项目设置中添加：
+#### Step 3: 创建 KV 数据库 🔑
+1. 项目部署后，进入 **Storage** 标签
+2. 点击 **Create Database**
+3. 选择 **Upstash** → **Redis**
+4. 创建数据库并连接到项目
 
-1. 进入项目 Settings → Environment Variables
-2. 添加 `ACCESS_PASSWORD`，值为你的访问密码
-3. 重新部署项目
+#### Step 4: 设置环境变量
+在项目设置中添加：
+- **Name**: `ACCESS_PASSWORD`
+- **Value**: 你的安全密码
+- **Environment**: Production, Preview, Development
+
+#### Step 5: 重新部署
+设置完成后重新部署项目。
+
+### 方式三：Vercel CLI
+
+```bash
+# 安装 CLI
+npm i -g vercel
+
+# 登录并部署
+vercel login
+vercel
+
+# 创建 KV 数据库（在 Dashboard 中）
+# 设置密码并重新部署
+vercel --prod
+```
 
 ### 📁 项目结构
 
@@ -170,16 +202,17 @@ DomainManagement/
 └── public/             # 静态资源
 ```
 
-### 🔧 技术栈
+### 🛠 技术栈
 
-- **框架**: Next.js 14 (App Router)
-- **语言**: TypeScript
-- **样式**: Tailwind CSS
-- **国际化**: next-intl
-- **图标**: Lucide React
-- **动画**: Framer Motion
-- **日期处理**: date-fns
-- **部署**: Vercel
+| 技术 | 版本 | 用途 |
+|------|------|------|
+| **Next.js** | 14 | React 全栈框架 (App Router) |
+| **TypeScript** | 5.0 | 类型安全的 JavaScript |
+| **Tailwind CSS** | 3.4 | 实用优先的 CSS 框架 |
+| **Vercel KV** | Latest | 云端键值数据库 (Upstash) |
+| **next-intl** | 3.19 | 国际化解决方案 |
+| **Lucide React** | Latest | 精美的图标库 |
+| **date-fns** | 3.6 | 现代化日期处理库 |
 
 ### 📝 使用说明
 
@@ -216,21 +249,27 @@ DomainManagement/
 - 使用环境变量存储访问密码
 - API 路由添加认证中间件
 - 会话管理（24小时有效期）
-- 建议使用强密码
+- 建议使用强密码（16+ 字符）
 
-### 📊 数据管理
+### 💾 数据存储
 
-#### 数据存储
+#### 存储方式
 
-域名数据存储在 `data/domains.json` 文件中。
+- **本地开发**: JSON 文件存储 (`data/domains.json`)
+- **生产环境**: Vercel KV (Upstash Redis)
 
-#### 数据备份
+#### 数据安全
 
-**重要**: Vercel 部署时，每次重新部署会重置数据文件。建议：
+- ✅ **云端存储**: 数据保存在 Upstash 云数据库
+- ✅ **自动备份**: KV 数据库自动备份和容灾
+- ✅ **永不丢失**: 重新部署不会丢失数据
+- ✅ **高性能**: Redis 级别的读写速度
 
-1. 定期导出数据（功能开发中）
-2. 使用 Vercel Blob Storage（升级方案）
-3. 手动下载 `data/domains.json` 文件备份
+#### 数据迁移
+
+项目自动检测环境并切换存储方式：
+- 本地开发时使用文件存储
+- 部署到 Vercel 时自动使用 KV 存储
 
 ### 🛣️ Roadmap
 
