@@ -58,11 +58,25 @@ export default async function LocaleLayout({
                 window.addEventListener('load', function() {
                   navigator.serviceWorker.register('/sw.js')
                     .then(function(registration) {
-                      console.log('SW registered: ', registration);
+                      console.log('✅ SW registered successfully');
+                      
+                      // 检查更新
+                      registration.addEventListener('updatefound', function() {
+                        console.log('🔄 New SW version found, updating...');
+                      });
                     })
                     .catch(function(registrationError) {
-                      console.log('SW registration failed: ', registrationError);
+                      console.error('❌ SW registration failed:', registrationError);
                     });
+                });
+                
+                // 监听网络状态
+                window.addEventListener('online', function() {
+                  console.log('🌐 Back online');
+                });
+                
+                window.addEventListener('offline', function() {
+                  console.log('📡 Gone offline, using cache');
                 });
               }
             `,
