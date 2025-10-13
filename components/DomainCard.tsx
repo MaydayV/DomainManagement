@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { Calendar, ExternalLink, Settings, Edit, Trash2, Info } from 'lucide-react';
+import { Calendar, ExternalLink, Settings, Edit, Trash2, Clock } from 'lucide-react';
 import { Domain } from '@/types';
 import { getDaysUntilExpiry, getExpiryStatus, cn } from '@/lib/utils';
 import { formatPrice } from '@/lib/currencies';
@@ -13,11 +13,12 @@ interface DomainCardProps {
   onEdit: (domain: Domain) => void;
   onDelete: (domain: Domain) => void;
   locale: string;
+  isMenuOpen: boolean;
+  onMenuToggle: (isOpen: boolean) => void;
 }
 
-export function DomainCard({ domain, onEdit, onDelete, locale }: DomainCardProps) {
+export function DomainCard({ domain, onEdit, onDelete, locale, isMenuOpen, onMenuToggle }: DomainCardProps) {
   const t = useTranslations();
-  const [showMenu, setShowMenu] = useState(false);
   const daysUntilExpiry = getDaysUntilExpiry(domain.expiryDate);
   const expiryStatus = getExpiryStatus(domain.expiryDate);
   const registrar = getRegistrarById(domain.registrar);
@@ -25,17 +26,32 @@ export function DomainCard({ domain, onEdit, onDelete, locale }: DomainCardProps
 
   const registrarName = registrar?.displayName[locale as 'zh' | 'en'] || domain.registrar;
 
+  // 菜单自动关闭定时器
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+    
+    if (isMenuOpen) {
+      // 菜单打开时，设置3秒后自动关闭
+      timer = setTimeout(() => {
+        onMenuToggle(false);
+      }, 3000);
+    }
+    
+    // 清理定时器
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, [isMenuOpen, onMenuToggle]);
+
   const handleRenew = () => {
     window.open(renewalUrl, '_blank', 'noopener,noreferrer');
   };
 
-  const handleDomainClick = () => {
-    window.open(`http://${domain.name}`, '_blank', 'noopener,noreferrer');
-  };
-
-  const handleWhoisClick = (e: React.MouseEvent) => {
+  const handleDomainClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    window.open(`https://mwhois.chinaz.com/${domain.name}`, '_blank', 'noopener,noreferrer');
+    window.open(`http://${domain.name}`, '_blank', 'noopener,noreferrer');
   };
 
   // 判断是否过期或即将过期
@@ -53,9 +69,16 @@ export function DomainCard({ domain, onEdit, onDelete, locale }: DomainCardProps
       className={cn(
         'relative bg-white rounded-xl border transition-all hover:shadow-2xl hover:-translate-y-1 group p-5 animate-slide-up',
         isExpired ? 'border-slate-300 bg-slate-50 opacity-60' : 'border-slate-200',
-        isExpiringSoon && !isExpired && 'border-yellow-300 bg-yellow-50/30 shadow-sm'
+        isExpiringSoon && !isExpired && 'border-yellow-300 bg-yellow-50/30 shadow-sm',
+        isMenuOpen && 'z-[50]' // 打开菜单时提升卡片层级
       )}
       style={{ animationDelay: '0.1s' }}
+      onClick={() => {
+        // 点击卡片其他区域关闭菜单
+        if (isMenuOpen) {
+          onMenuToggle(false);
+        }
+      }}
     >
       {/* 头部：域名、备案状态和注册商 */}
       <div className="flex items-start justify-between gap-3 mb-4">
@@ -134,7 +157,10 @@ export function DomainCard({ domain, onEdit, onDelete, locale }: DomainCardProps
         {/* 操作按钮组 */}
         <div className="flex items-center gap-1">
           <button
-            onClick={handleRenew}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRenew();
+            }}
             className="inline-flex items-center justify-center w-8 h-8 text-primary-600 hover:bg-primary-50 rounded-lg transition-all hover:scale-110 active:scale-95"
             title={t('domain.renew')}
           >
@@ -143,23 +169,39 @@ export function DomainCard({ domain, onEdit, onDelete, locale }: DomainCardProps
 
           <div className="relative">
             <button
-              onClick={() => setShowMenu(!showMenu)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onMenuToggle(!isMenuOpen);
+              }}
               className="inline-flex items-center justify-center w-8 h-8 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
             >
               <Settings className="w-4 h-4" />
             </button>
             
-            {showMenu && (
+            {isMenuOpen && (
               <>
                 <div 
-                  className="fixed inset-0 z-10" 
-                  onClick={() => setShowMenu(false)}
+                  className="fixed inset-0 z-[100]" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMenuToggle(false);
+                  }}
+                  style={{ backgroundColor: 'transparent' }}
                 />
-                <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-20 animate-fade-in">
+                <div 
+                  className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-[200] animate-fade-in"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* 自动关闭提示 */}
+                  <div className="absolute -top-8 right-0 flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">
+                    <Clock className="w-3 h-3" />
+                    <span>3s自动关闭</span>
+                  </div>
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       onEdit(domain);
-                      setShowMenu(false);
+                      onMenuToggle(false);
                     }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                   >
@@ -167,9 +209,10 @@ export function DomainCard({ domain, onEdit, onDelete, locale }: DomainCardProps
                     {t('common.edit')}
                   </button>
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       onDelete(domain);
-                      setShowMenu(false);
+                      onMenuToggle(false);
                     }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                   >
@@ -192,4 +235,3 @@ export function DomainCard({ domain, onEdit, onDelete, locale }: DomainCardProps
     </div>
   );
 }
-

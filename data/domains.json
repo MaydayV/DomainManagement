@@ -1,1 +1,13 @@
-[]
+[
+  {
+    "name": "ok.com",
+    "registrar": "aliyun",
+    "expiryDate": "2026-02-05T00:00:00.000Z",
+    "price": 80,
+    "currency": "CNY",
+    "filingStatus": "",
+    "id": "domain-1760356223881-5m53es896",
+    "createdAt": "2025-10-13T11:50:23.881Z",
+    "updatedAt": "2025-10-13T11:50:23.881Z"
+  }
+]

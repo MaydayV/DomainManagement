@@ -30,6 +30,9 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingDomain, setEditingDomain] = useState<Domain | null>(null);
   const [deletingDomain, setDeletingDomain] = useState<Domain | null>(null);
+  
+  // 菜单状态统一管理
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   // Auth token
   const [authToken, setAuthToken] = useState<string>('');
@@ -216,6 +219,8 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
           onEdit={handleEditDomain}
           onDelete={handleDeleteDomain}
           locale={locale}
+          openMenuId={openMenuId}
+          onMenuToggle={setOpenMenuId}
         />
       </main>
 

@@ -199,6 +199,28 @@
   animation: gradientShift 2s ease infinite;
 }
 
+/* 确保下拉菜单层级 */
+.domain-card-menu {
+  z-index: 1000;
+}
+
+/* 菜单自动关闭动画 */
+.menu-auto-close {
+  animation: menuFadeOut 0.3s ease-in-out forwards;
+  animation-delay: 2.7s;
+}
+
+@keyframes menuFadeOut {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
 /* 滚动条样式 */
 ::-webkit-scrollbar {
   width: 8px;

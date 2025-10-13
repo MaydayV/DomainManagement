@@ -11,9 +11,11 @@ interface DomainListProps {
   onEdit: (domain: Domain) => void;
   onDelete: (domain: Domain) => void;
   locale: string;
+  openMenuId: string | null;
+  onMenuToggle: (id: string | null) => void;
 }
 
-export function DomainList({ domains, onEdit, onDelete, locale }: DomainListProps) {
+export function DomainList({ domains, onEdit, onDelete, locale, openMenuId, onMenuToggle }: DomainListProps) {
   const t = useTranslations();
 
   if (domains.length === 0) {
@@ -40,6 +42,8 @@ export function DomainList({ domains, onEdit, onDelete, locale }: DomainListProp
             onEdit={onEdit}
             onDelete={onDelete}
             locale={locale}
+            isMenuOpen={openMenuId === domain.id}
+            onMenuToggle={(isOpen) => onMenuToggle(isOpen ? domain.id : null)}
           />
         </div>
       ))}
