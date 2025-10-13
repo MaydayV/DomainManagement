@@ -15,7 +15,7 @@ export default createMiddleware({
 });
 
 export const config = {
-  // 匹配所有路径，除了 api、_next/static、_next/image、favicon.ico、robots.txt
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|robots.txt).*)'],
+  // 匹配所有路径，除了静态资源和 PWA 文件
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|robots.txt|manifest.json|sw.js|icon-.*\\.png).*)'],
 };
 

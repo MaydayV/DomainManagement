@@ -36,6 +36,7 @@
     "registrationDate": "注册时间",
     "daysUntilExpiry": "距离到期",
     "price": "价格",
+    "renewalPrice": "续费价格",
     "currency": "币种",
     "filingStatus": "备案状态",
     "renewalUrl": "续费链接",
@@ -67,7 +68,12 @@
     "aws": "AWS",
     "spaceship": "Spaceship",
     "porkbun": "Porkbun",
+    "godaddy": "GoDaddy",
     "custom": "自定义",
+    "customName": "注册商名称",
+    "customPlaceholder": "输入注册商名称",
+    "customHint": "例如：新网、易名中国、GoDaddy 等",
+    "customRequired": "请输入自定义注册商名称",
     "selectRegistrar": "选择注册商"
   },
   "sort": {
@@ -90,6 +96,12 @@
     "domainDeleted": "域名删除成功",
     "operationFailed": "操作失败",
     "networkError": "网络错误，请重试"
+  },
+  "stats": {
+    "totalDomains": "域名总数",
+    "expiringSoon": "即将到期",
+    "expired": "已过期",
+    "totalSpent": "累计支出"
   }
 }
 

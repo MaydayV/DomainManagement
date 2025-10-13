@@ -5,7 +5,7 @@
 ### Step 1: 克隆项目
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/MaydayV/DomainManagement.git
 cd DomainManagement
 ```
 
@@ -51,7 +51,7 @@ npm run dev
 git init
 git add .
 git commit -m "Initial commit"
-git remote add origin <your-github-repo>
+git remote add origin https://github.com/MaydayV/DomainManagement.git
 git push -u origin main
 ```
 

@@ -29,15 +29,19 @@ export function DomainList({ domains, onEdit, onDelete, locale }: DomainListProp
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {domains.map((domain) => (
-        <DomainCard
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 domain-grid">
+      {domains.map((domain, index) => (
+        <div
           key={domain.id}
-          domain={domain}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          locale={locale}
-        />
+          style={{ animationDelay: `${index * 0.05}s` }}
+        >
+          <DomainCard
+            domain={domain}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            locale={locale}
+          />
+        </div>
       ))}
     </div>
   );

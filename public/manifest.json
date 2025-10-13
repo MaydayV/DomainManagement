@@ -1,0 +1,41 @@
+{
+  "name": "域名管理工具 | Domain Management",
+  "short_name": "域名管理",
+  "description": "优雅的域名管理工具，支持多注册商、到期提醒、多语言",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#6366f1",
+  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png", 
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "business", "utilities"],
+  "screenshots": [
+    {
+      "src": "/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "域名管理主界面"
+    },
+    {
+      "src": "/screenshot-narrow.png",
+      "sizes": "480x854",
+      "type": "image/png", 
+      "form_factor": "narrow",
+      "label": "移动端界面"
+    }
+  ]
+}

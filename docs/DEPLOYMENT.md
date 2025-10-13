@@ -11,7 +11,7 @@ git init
 git add .
 git commit -m "Initial commit"
 git branch -M main
-git remote add origin <your-github-repo-url>
+git remote add origin https://github.com/MaydayV/DomainManagement.git
 git push -u origin main
 ```
 
@@ -83,7 +83,7 @@ vercel env add ACCESS_PASSWORD
 
 点击下方按钮一键部署：
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/domain-management&env=ACCESS_PASSWORD&envDescription=访问密码&envLink=https://github.com/yourusername/domain-management)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/MaydayV/DomainManagement&env=ACCESS_PASSWORD&envDescription=访问密码&envLink=https://github.com/MaydayV/DomainManagement)
 
 ## 环境变量说明
 

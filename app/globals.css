@@ -218,3 +218,40 @@
   background: #94a3b8;
 }
 
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .container {
+    @apply px-3;
+  }
+  
+  /* 移动端卡片间距 */
+  .domain-grid {
+    @apply grid-cols-1 gap-3;
+  }
+  
+  /* 移动端按钮 */
+  .mobile-btn {
+    @apply text-xs px-3 py-2;
+  }
+  
+  /* 移动端表单 */
+  .mobile-form {
+    @apply space-y-3;
+  }
+  
+  .mobile-form .grid {
+    @apply grid-cols-1 gap-3;
+  }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) {
+  .card:hover {
+    @apply shadow-lg;
+  }
+  
+  button:hover {
+    @apply scale-100;
+  }
+}
+

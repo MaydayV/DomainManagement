@@ -34,12 +34,19 @@ export function DomainForm({ domain, onSubmit, onCancel, locale }: DomainFormPro
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [whoisLoading, setWhoisLoading] = useState(false);
+  const [showCustomRegistrar, setShowCustomRegistrar] = useState(false);
+  const [customRegistrarName, setCustomRegistrarName] = useState('');
 
   useEffect(() => {
     if (domain) {
+      // 检查是否为自定义注册商
+      const isCustom = domain.registrar.startsWith('custom-');
+      const registrarValue = isCustom ? 'custom' : domain.registrar;
+      const customName = isCustom ? domain.registrar.substring(7) : '';
+      
       setFormData({
         name: domain.name,
-        registrar: domain.registrar,
+        registrar: registrarValue,
         expiryDate: domain.expiryDate.split('T')[0],
         registrationDate: domain.registrationDate?.split('T')[0] || '',
         price: domain.price.toString(),
@@ -48,6 +55,9 @@ export function DomainForm({ domain, onSubmit, onCancel, locale }: DomainFormPro
         renewalUrl: domain.renewalUrl || '',
         notes: domain.notes || '',
       });
+      
+      setShowCustomRegistrar(isCustom);
+      setCustomRegistrarName(customName);
     }
   }, [domain]);
 
@@ -62,6 +72,10 @@ export function DomainForm({ domain, onSubmit, onCancel, locale }: DomainFormPro
 
     if (!formData.registrar) {
       newErrors.registrar = t('validation.required');
+    }
+
+    if (formData.registrar === 'custom' && !customRegistrarName.trim()) {
+      newErrors.registrar = t('registrar.customRequired');
     }
 
     if (!formData.expiryDate) {
@@ -83,9 +97,13 @@ export function DomainForm({ domain, onSubmit, onCancel, locale }: DomainFormPro
       return;
     }
 
+    const registrarValue = formData.registrar === 'custom' && customRegistrarName.trim() 
+      ? `custom-${customRegistrarName.trim()}` 
+      : formData.registrar;
+
     const submitData: Partial<Domain> = {
       name: formData.name.trim(),
-      registrar: formData.registrar,
+      registrar: registrarValue,
       expiryDate: new Date(formData.expiryDate).toISOString(),
       registrationDate: formData.registrationDate ? new Date(formData.registrationDate).toISOString() : undefined,
       price: Number(formData.price) || 0,
@@ -98,10 +116,16 @@ export function DomainForm({ domain, onSubmit, onCancel, locale }: DomainFormPro
     onSubmit(submitData);
   };
 
-  const registrarOptions = DEFAULT_REGISTRARS.map(r => ({
-    value: r.id,
-    label: r.displayName[locale as 'zh' | 'en'],
-  }));
+  const registrarOptions = [
+    ...DEFAULT_REGISTRARS.map(r => ({
+      value: r.id,
+      label: r.displayName[locale as 'zh' | 'en'],
+    })),
+    {
+      value: 'custom',
+      label: t('registrar.custom'),
+    }
+  ];
 
   const currencyOptions = CURRENCIES.map(c => ({
     value: c.code,
@@ -152,14 +176,39 @@ export function DomainForm({ domain, onSubmit, onCancel, locale }: DomainFormPro
         <p className="mt-1 text-xs text-slate-500">{t('domain.whoisHint')}</p>
       </div>
 
-      <Select
-        label={t('domain.registrar')}
-        value={formData.registrar}
-        onChange={(e) => setFormData({ ...formData, registrar: e.target.value })}
-        options={registrarOptions}
-        error={errors.registrar}
-        required
-      />
+      <div>
+        <Select
+          label={t('domain.registrar')}
+          value={formData.registrar}
+          onChange={(e) => {
+            const value = e.target.value;
+            setFormData({ ...formData, registrar: value });
+            setShowCustomRegistrar(value === 'custom');
+            if (value !== 'custom') {
+              setCustomRegistrarName('');
+            }
+          }}
+          options={registrarOptions}
+          error={errors.registrar}
+          required
+        />
+        
+        {/* 自定义注册商输入 */}
+        {showCustomRegistrar && (
+          <div className="mt-3">
+            <Input
+              label={t('registrar.customName')}
+              value={customRegistrarName}
+              onChange={(e) => setCustomRegistrarName(e.target.value)}
+              placeholder={t('registrar.customPlaceholder')}
+              required
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              {t('registrar.customHint')}
+            </p>
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-2 gap-4">
         <DateInput
@@ -181,7 +230,7 @@ export function DomainForm({ domain, onSubmit, onCancel, locale }: DomainFormPro
 
       <div className="grid grid-cols-2 gap-4">
         <Input
-          label={t('domain.price')}
+          label={t('domain.renewalPrice')}
           type="number"
           step="0.01"
           min="0"

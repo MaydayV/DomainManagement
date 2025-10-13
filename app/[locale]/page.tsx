@@ -10,6 +10,7 @@ import { SearchBar } from '@/components/SearchBar';
 import { FilterBar } from '@/components/FilterBar';
 import { DomainList } from '@/components/DomainList';
 import { DomainForm } from '@/components/DomainForm';
+import { StatsPanel } from '@/components/StatsPanel';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 
@@ -165,6 +166,9 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
       <Header locale={locale} onLogout={handleLogout} />
 
       <main className="container mx-auto px-4 py-8">
+        {/* 数据统计面板 */}
+        <StatsPanel domains={domains} locale={locale} />
+
         {/* Toolbar - 单行布局 */}
         <div className="mb-8 animate-slide-down">
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
@@ -183,6 +187,7 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
                 onFilingStatusChange={setFilingStatusFilter}
                 onSortChange={setSortBy}
                 locale={locale}
+                domains={domains}
               />
             </div>
 

@@ -31,14 +31,43 @@ export default async function LocaleLayout({
       <head>
         <title>域名管理工具 | Domain Management</title>
         <meta name="description" content="优雅的域名管理工具，支持多注册商、到期提醒、多语言等功能" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
         <meta name="robots" content="noindex, nofollow" />
+        
+        {/* PWA 相关 */}
+        <meta name="theme-color" content="#6366f1" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="域名管理" />
+        <link rel="manifest" href="/manifest.json" />
+        
+        {/* 图标 */}
         <link rel="icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body>
+      <body className="overflow-x-hidden">
         <NextIntlClientProvider locale={locale} messages={messages}>
           {children}
         </NextIntlClientProvider>
+        
+        {/* PWA Service Worker */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                      console.log('SW registered: ', registration);
+                    })
+                    .catch(function(registrationError) {
+                      console.log('SW registration failed: ', registrationError);
+                    });
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );

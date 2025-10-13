@@ -36,6 +36,7 @@
     "registrationDate": "Registration Date",
     "daysUntilExpiry": "Days Until Expiry",
     "price": "Price",
+    "renewalPrice": "Renewal Price", 
     "currency": "Currency",
     "filingStatus": "Filing Status",
     "renewalUrl": "Renewal URL",
@@ -60,14 +61,19 @@
   "registrar": {
     "aliyun": "Alibaba Cloud",
     "tencent": "Tencent Cloud",
-    "huawei": "Huawei Cloud",
+    "huawei": "Huawei Cloud", 
     "west": "West.cn",
     "volcengine": "Volcengine",
     "cloudflare": "Cloudflare",
     "aws": "AWS",
     "spaceship": "Spaceship",
     "porkbun": "Porkbun",
+    "godaddy": "GoDaddy",
     "custom": "Custom",
+    "customName": "Registrar Name",
+    "customPlaceholder": "Enter registrar name", 
+    "customHint": "e.g., GoDaddy, Namecheap, Domain.com etc.",
+    "customRequired": "Please enter custom registrar name",
     "selectRegistrar": "Select Registrar"
   },
   "sort": {
@@ -90,6 +96,12 @@
     "domainDeleted": "Domain deleted successfully",
     "operationFailed": "Operation failed",
     "networkError": "Network error, please try again"
+  },
+  "stats": {
+    "totalDomains": "Total Domains",
+    "expiringSoon": "Expiring Soon", 
+    "expired": "Expired",
+    "totalSpent": "Total Spent"
   }
 }
 

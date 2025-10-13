@@ -122,8 +122,11 @@ export function DomainCard({ domain, onEdit, onDelete, locale }: DomainCardProps
       <div className="flex items-center justify-between pt-3 border-t border-slate-100">
         <div className="flex items-center gap-3">
           {domain.price > 0 && (
-            <span className="text-base font-bold text-slate-900">
-              {formatPrice(domain.price, domain.currency)}
+            <span className="text-sm text-slate-700">
+              <span className="text-slate-500">{t('domain.renewalPrice')}:</span>
+              <span className="font-semibold ml-1 text-slate-900">
+                {formatPrice(domain.price, domain.currency)}
+              </span>
             </span>
           )}
         </div>

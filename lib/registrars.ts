@@ -92,6 +92,16 @@ export const DEFAULT_REGISTRARS: Registrar[] = [
     website: 'https://porkbun.com',
     renewalUrlTemplate: 'https://porkbun.com/account/domainsSpeadsheet',
   },
+  {
+    id: 'godaddy',
+    name: 'godaddy',
+    displayName: {
+      zh: 'GoDaddy',
+      en: 'GoDaddy',
+    },
+    website: 'https://www.godaddy.com',
+    renewalUrlTemplate: 'https://account.godaddy.com/products',
+  },
 ];
 
 // 获取所有注册商（包括自定义）
@@ -101,7 +111,30 @@ export function getAllRegistrars(customRegistrars: Registrar[] = []): Registrar[
 
 // 根据 ID 获取注册商
 export function getRegistrarById(id: string, customRegistrars: Registrar[] = []): Registrar | undefined {
-  return getAllRegistrars(customRegistrars).find(r => r.id === id);
+  // 检查预设注册商
+  const preset = DEFAULT_REGISTRARS.find(r => r.id === id);
+  if (preset) return preset;
+  
+  // 检查自定义注册商
+  const custom = customRegistrars.find(r => r.id === id);
+  if (custom) return custom;
+  
+  // 如果是 custom-开头的，创建临时注册商对象
+  if (id.startsWith('custom-')) {
+    const name = id.substring(7); // 移除 'custom-' 前缀
+    return {
+      id,
+      name,
+      displayName: {
+        zh: name,
+        en: name,
+      },
+      website: '#',
+      isCustom: true,
+    };
+  }
+  
+  return undefined;
 }
 
 // 获取续费 URL

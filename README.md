@@ -10,433 +10,189 @@
 
 **优雅的域名管理工具，支持多注册商、到期提醒、云端存储**
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/domain-management)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/MaydayV/DomainManagement)
 
-[🚀 快速部署](#快速部署) | [📖 English](#english) | [🎯 功能特性](#功能特性)
+**🌐 语言版本 | Language Versions**
+
+**[🇨🇳 中文文档](#chinese)** | **[🇺🇸 English Documentation](#english)** | **[📚 文档中心](./docs/)**
 
 </div>
 
 ---
 
----
+# Chinese
 
-## 中文
+## 🎯 主要特性
 
-### ✨ 功能特性
+- 🌐 **多注册商支持** - 阿里云、腾讯云、华为云、Cloudflare、AWS、GoDaddy 等 10 个预设
+- ⏰ **智能到期提醒** - 30天内高亮，过期灰化，一目了然  
+- 💾 **云端安全存储** - Vercel KV 数据库，永不丢失
+- 🔍 **强大搜索筛选** - 模糊搜索、多维度筛选排序
+- 💰 **价格统计管理** - 支持多币种，自动汇率换算
+- 🏷️ **备案状态管理** - 可视化状态标签
+- 🌍 **多语言支持** - 中文/English，自动检测浏览器语言
+- 📱 **PWA 支持** - 可安装到桌面，原生应用体验
+- 🎨 **响应式设计** - 完美适配移动端和桌面端
 
-- 🌐 **多注册商支持**
-  - 阿里云、腾讯云、华为云
-  - 西部数码、火山引擎
-  - Cloudflare、AWS、Spaceship、Porkbun
-  - 支持自定义注册商
+## 🚀 快速开始
 
-- ⏰ **到期管理**
-  - 域名到期时间显示
-  - 距离到期天数计算
-  - 30天内到期高亮提醒
-  - 已过期状态标记
-
-- 💰 **价格管理**
-  - 记录购买/续费价格
-  - 支持多币种（CNY、USD、EUR 等）
-  - 价格展示与币种符号
-
-- 🔍 **搜索与筛选**
-  - 域名模糊搜索
-  - 按注册商筛选
-  - 按备案状态筛选
-  - 多维度排序（到期时间、域名名称、创建时间）
-
-- 🏷️ **备案状态**
-  - 已备案、未备案、备案中
-  - 可选记录，不填不显示
-  - 默认未备案状态
-
-- 🔄 **快速续费**
-  - 一键跳转注册商续费页面
-  - 支持自定义续费链接
-
-- 🌍 **多语言支持**
-  - 中文（简体）
-  - English
-
-- 🎨 **优美 UI**
-  - 响应式设计
-  - 卡片式布局
-  - 流畅动画效果
-  - 暗色主题支持（规划中）
-
-### 🚀 快速开始
-
-#### 1. 克隆项目
+### 本地运行
 
 ```bash
-git clone <repository-url>
+# 克隆项目
+git clone https://github.com/MaydayV/DomainManagement.git
 cd DomainManagement
-```
 
-#### 2. 安装依赖
-
-```bash
+# 安装依赖
 npm install
-# 或
-yarn install
-# 或
-pnpm install
-```
 
-#### 3. 配置环境变量
+# 设置密码
+echo "ACCESS_PASSWORD=your_password" > .env.local
 
-创建 `.env.local` 文件：
-
-```env
-# 访问密码（必须设置）
-ACCESS_PASSWORD=your_secure_password_here
-```
-
-**注意**：生产环境使用 Vercel KV 存储，无需本地数据库配置。
-
-#### 4. 运行开发服务器
-
-```bash
+# 启动应用
 npm run dev
-# 或
-yarn dev
-# 或
-pnpm dev
 ```
 
-访问 [http://localhost:3000](http://localhost:3000)
+访问 http://localhost:3000，使用设置的密码登录。
 
-## 🚀 快速部署
+### 一键部署到 Vercel
 
-### 方式一：一键部署（推荐）
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/MaydayV/DomainManagement)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/domain-management)
+部署后：
+1. 创建 **Upstash KV 数据库** 
+2. 设置 **ACCESS_PASSWORD** 环境变量
+3. 重新部署
 
-点击按钮后：
-1. 导入 GitHub 仓库
-2. 创建 Vercel KV 数据库
-3. 设置访问密码
-4. 一键部署完成！
+**详细步骤**: [📚 部署指南](./docs/DEPLOYMENT.md)
 
-### 方式二：手动部署
+## 📖 基本使用
 
-#### Step 1: 推送到 GitHub
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-git remote add origin <your-repo-url>
-git push -u origin main
-```
+### 添加域名
+1. 点击"添加域名"按钮
+2. 输入域名 → 点击 WHOIS 查询 → 自动填充信息
+3. 设置价格和备案状态（可选）
+4. 保存
 
-#### Step 2: 在 Vercel 创建项目
-1. 访问 [vercel.com](https://vercel.com)
-2. 新建项目，选择你的仓库
-3. 点击 Deploy
+### 管理域名  
+- **访问网站**: 点击域名名称
+- **快速续费**: 点击 🔄 图标
+- **编辑删除**: 点击 ⚙️ 设置菜单
 
-#### Step 3: 创建 KV 数据库 🔑
-1. 项目部署后，进入 **Storage** 标签
-2. 点击 **Create Database**
-3. 选择 **Upstash** → **Redis**
-4. 创建数据库并连接到项目
+### 数据统计
+顶部统计面板实时显示：
+- 📊 域名总数 | ⚠️ 即将到期 | ❌ 已过期 | 💰 累计支出
 
-#### Step 4: 设置环境变量
-在项目设置中添加：
-- **Name**: `ACCESS_PASSWORD`
-- **Value**: 你的安全密码
-- **Environment**: Production, Preview, Development
+## 🛠 技术栈
 
-#### Step 5: 重新部署
-设置完成后重新部署项目。
+- **Next.js 14** - React 全栈框架
+- **TypeScript** - 类型安全开发  
+- **Tailwind CSS** - 现代化样式
+- **Vercel KV** - 云端数据存储 (Upstash Redis)
+- **PWA** - 可安装到桌面
 
-### 方式三：Vercel CLI
+## 📚 详细文档
 
-```bash
-# 安装 CLI
-npm i -g vercel
+- 📖 [快速开始指南](./docs/QUICKSTART.md) - 完整安装和使用教程
+- 🚀 [部署指南](./docs/DEPLOYMENT.md) - Vercel + KV 完整部署流程
+- 📋 [功能清单](./docs/FEATURES.md) - 所有功能详情和未来规划  
+- 💻 [开发命令](./docs/COMMANDS.md) - 维护、自定义和故障排除
+- 📚 [文档中心](./docs/) - 完整文档导航
 
-# 登录并部署
-vercel login
-vercel
-
-# 创建 KV 数据库（在 Dashboard 中）
-# 设置密码并重新部署
-vercel --prod
-```
-
-### 📁 项目结构
-
-```
-DomainManagement/
-├── app/                    # Next.js App Router
-│   ├── [locale]/          # 多语言路由
-│   │   ├── page.tsx       # 主页
-│   │   ├── login/         # 登录页
-│   │   └── layout.tsx     # 布局
-│   ├── api/               # API 路由
-│   │   ├── auth/          # 认证接口
-│   │   └── domains/       # 域名 CRUD
-│   └── globals.css        # 全局样式
-├── components/            # React 组件
-│   ├── ui/               # 基础 UI 组件
-│   ├── DomainCard.tsx    # 域名卡片
-│   ├── DomainForm.tsx    # 域名表单
-│   ├── DomainList.tsx    # 域名列表
-│   ├── FilterBar.tsx     # 筛选栏
-│   ├── SearchBar.tsx     # 搜索栏
-│   └── Header.tsx        # 页头
-├── lib/                  # 工具函数
-│   ├── domains.ts        # 域名数据操作
-│   ├── registrars.ts     # 注册商配置
-│   ├── currencies.ts     # 币种配置
-│   ├── auth.ts          # 认证逻辑
-│   └── utils.ts         # 通用工具
-├── types/               # TypeScript 类型定义
-├── messages/            # 多语言文件
-│   ├── zh.json         # 中文
-│   └── en.json         # 英文
-├── data/               # 数据存储
-│   └── domains.json    # 域名数据
-└── public/             # 静态资源
-```
-
-### 🛠 技术栈
-
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| **Next.js** | 14 | React 全栈框架 (App Router) |
-| **TypeScript** | 5.0 | 类型安全的 JavaScript |
-| **Tailwind CSS** | 3.4 | 实用优先的 CSS 框架 |
-| **Vercel KV** | Latest | 云端键值数据库 (Upstash) |
-| **next-intl** | 3.19 | 国际化解决方案 |
-| **Lucide React** | Latest | 精美的图标库 |
-| **date-fns** | 3.6 | 现代化日期处理库 |
-
-### 📝 使用说明
-
-#### 添加域名
-
-1. 点击右上角"添加域名"按钮
-2. 填写域名信息：
-   - 域名名称（必填）
-   - 注册商（必填）
-   - 到期时间（必填）
-   - 价格和币种（可选）
-   - 备案状态（可选）
-   - 自定义续费链接（可选）
-   - 备注（可选）
-3. 点击保存
-
-#### 编辑域名
-
-1. 在域名卡片上点击"编辑"按钮
-2. 修改相关信息
-3. 点击保存
-
-#### 删除域名
-
-1. 在域名卡片上点击"删除"按钮
-2. 确认删除操作
-
-#### 续费域名
-
-点击域名卡片上的"续费"按钮，将自动跳转到对应注册商的续费页面
-
-### 🔐 安全说明
-
-- 使用环境变量存储访问密码
-- API 路由添加认证中间件
-- 会话管理（24小时有效期）
-- 建议使用强密码（16+ 字符）
-
-### 💾 数据存储
-
-#### 存储方式
-
-- **本地开发**: JSON 文件存储 (`data/domains.json`)
-- **生产环境**: Vercel KV (Upstash Redis)
-
-#### 数据安全
-
-- ✅ **云端存储**: 数据保存在 Upstash 云数据库
-- ✅ **自动备份**: KV 数据库自动备份和容灾
-- ✅ **永不丢失**: 重新部署不会丢失数据
-- ✅ **高性能**: Redis 级别的读写速度
-
-#### 数据迁移
-
-项目自动检测环境并切换存储方式：
-- 本地开发时使用文件存储
-- 部署到 Vercel 时自动使用 KV 存储
-
-### 🛣️ Roadmap
-
-- [ ] 数据导入/导出功能
-- [ ] 批量操作
-- [ ] 邮件到期提醒
-- [ ] 数据统计面板
-- [ ] PWA 支持
-- [ ] 暗黑模式
-- [ ] Vercel Blob Storage 集成
-- [ ] 移动端 App
-
-### 🤝 贡献
+## 🤝 贡献
 
 欢迎提交 Issue 和 Pull Request！
 
-### 📄 许可证
+## 📄 许可证
 
 MIT License
 
 ---
 
-## English
+# English
 
-### ✨ Features
+## 🎯 Key Features
 
-- 🌐 **Multi-Registrar Support**
-  - Alibaba Cloud, Tencent Cloud, Huawei Cloud
-  - West.cn, Volcengine
-  - Cloudflare, AWS, Spaceship, Porkbun
-  - Custom registrar support
+- 🌐 **Multi-Registrar Support** - 9 preset registrars including Alibaba Cloud, Cloudflare, AWS
+- ⏰ **Smart Expiry Alerts** - 30-day warnings, visual expired status
+- 💾 **Cloud Storage** - Vercel KV database, never lose data
+- 🔍 **Powerful Search** - Fuzzy search, multi-dimensional filtering
+- 💰 **Price Management** - Multi-currency support, automatic conversion
+- 🏷️ **Filing Status** - Visual status badges
+- 🌍 **Internationalization** - Chinese/English, auto browser detection
+- 📱 **PWA Support** - Installable desktop app experience
+- 🎨 **Responsive Design** - Perfect for mobile and desktop
 
-- ⏰ **Expiry Management**
-  - Domain expiry date display
-  - Days until expiry calculation
-  - Highlight domains expiring within 30 days
-  - Expired status indicator
+## 🚀 Quick Start
 
-- 💰 **Price Management**
-  - Record purchase/renewal price
-  - Multi-currency support (CNY, USD, EUR, etc.)
-  - Price display with currency symbols
-
-- 🔍 **Search & Filter**
-  - Fuzzy domain search
-  - Filter by registrar
-  - Filter by filing status
-  - Multi-dimensional sorting (expiry date, domain name, created date)
-
-- 🏷️ **Filing Status**
-  - Filed, Not Filed, Filing
-  - Optional field, hidden if not set
-  - Default: Not Filed
-
-- 🔄 **Quick Renewal**
-  - One-click jump to registrar renewal page
-  - Custom renewal URL support
-
-- 🌍 **Multi-language**
-  - Chinese (Simplified)
-  - English
-
-- 🎨 **Beautiful UI**
-  - Responsive design
-  - Card-based layout
-  - Smooth animations
-  - Dark theme (planned)
-
-### 🚀 Quick Start
-
-#### 1. Clone the repository
+### Local Development
 
 ```bash
-git clone <repository-url>
+# Clone project
+git clone https://github.com/MaydayV/DomainManagement.git
 cd DomainManagement
-```
 
-#### 2. Install dependencies
-
-```bash
+# Install dependencies
 npm install
-# or
-yarn install
-# or
-pnpm install
-```
 
-#### 3. Configure environment variables
+# Set password
+echo "ACCESS_PASSWORD=your_password" > .env.local
 
-Create `.env.local` file:
-
-```env
-# Access password (required)
-ACCESS_PASSWORD=your_secure_password_here
-
-# App config (optional)
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
-
-#### 4. Run development server
-
-```bash
+# Start application
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Visit http://localhost:3000 and login with your password.
 
-### 📦 Deploy to Vercel
+### One-Click Deploy to Vercel
 
-#### Option 1: One-Click Deploy
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/MaydayV/DomainManagement)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
+After deployment:
+1. Create **Upstash KV database**
+2. Set **ACCESS_PASSWORD** environment variable
+3. Redeploy
 
-#### Option 2: CLI Deploy
+**Detailed Guide**: [📚 Deployment Guide](./docs/DEPLOYMENT.md)
 
-```bash
-# Install Vercel CLI
-npm i -g vercel
+## 📖 Basic Usage
 
-# Login
-vercel login
+### Adding Domains
+1. Click "Add Domain" button
+2. Enter domain → Click WHOIS lookup → Auto-fill information
+3. Set pricing and filing status (optional)
+4. Save
 
-# Deploy
-vercel
+### Managing Domains
+- **Visit Website**: Click domain name
+- **Quick Renewal**: Click 🔄 icon  
+- **Edit/Delete**: Click ⚙️ settings menu
 
-# Production deploy
-vercel --prod
-```
+### Data Statistics  
+Top panel shows real-time stats:
+- 📊 Total Domains | ⚠️ Expiring Soon | ❌ Expired | 💰 Total Spent (from registration)
 
-#### Configure Environment Variables
+## 🛠 Tech Stack
 
-Add in Vercel project settings:
+- **Next.js 14** - React full-stack framework
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Modern styling
+- **Vercel KV** - Cloud data storage (Upstash Redis)
+- **PWA** - Installable desktop app
 
-1. Go to Project Settings → Environment Variables
-2. Add `ACCESS_PASSWORD` with your password
-3. Redeploy the project
+## 📚 Documentation
 
-### 🔐 Security
+- 📖 [Quick Start Guide](./docs/QUICKSTART.md) - Complete installation and usage tutorial
+- 🚀 [Deployment Guide](./docs/DEPLOYMENT.md) - Full Vercel + KV deployment process
+- 📋 [Feature List](./docs/FEATURES.md) - All features and future roadmap
+- 💻 [Commands Reference](./docs/COMMANDS.md) - Development, customization and troubleshooting
+- 📚 [Documentation Center](./docs/) - Complete documentation navigation
 
-- Access password stored in environment variables
-- API routes with authentication middleware
-- Session management (24-hour validity)
-- Use strong passwords recommended
-
-### 📊 Data Management
-
-#### Data Storage
-
-Domain data is stored in `data/domains.json`.
-
-#### Data Backup
-
-**Important**: Vercel deployments reset the data file. Recommendations:
-
-1. Regular data export (feature in development)
-2. Use Vercel Blob Storage (upgrade plan)
-3. Manual download of `data/domains.json` for backup
-
-### 🤝 Contributing
+## 🤝 Contributing
 
 Issues and Pull Requests are welcome!
 
-### 📄 License
+## 📄 License
 
 MIT License
 
@@ -444,7 +200,8 @@ MIT License
 
 <div align="center">
 
-Made with ❤️ using Next.js
+**Made with ❤️ using Next.js & Vercel KV**
+
+[⬆️ Back to Top](#域名管理工具--domain-management-tool) | [🇨🇳 中文](#chinese) | [🇺🇸 English](#english) | [📚 Docs](./docs/)
 
 </div>
-
