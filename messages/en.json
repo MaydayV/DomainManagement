@@ -1,0 +1,95 @@
+{
+  "common": {
+    "appName": "Domain Management",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "reset": "Reset",
+    "close": "Close"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "password": "Password",
+    "enterPassword": "Enter access password",
+    "incorrectPassword": "Incorrect password",
+    "loginRequired": "Please login first"
+  },
+  "domain": {
+    "domain": "Domain",
+    "domains": "Domains",
+    "addDomain": "Add Domain",
+    "editDomain": "Edit Domain",
+    "deleteDomain": "Delete Domain",
+    "domainName": "Domain Name",
+    "registrar": "Registrar",
+    "expiryDate": "Expiry Date",
+    "registrationDate": "Registration Date",
+    "daysUntilExpiry": "Days Until Expiry",
+    "price": "Price",
+    "currency": "Currency",
+    "filingStatus": "Filing Status",
+    "renewalUrl": "Renewal URL",
+    "notes": "Notes",
+    "renew": "Renew",
+    "days": "days",
+    "expired": "Expired",
+    "expiringSoon": "Expiring Soon",
+    "noDomains": "No domains yet",
+    "addFirstDomain": "Add your first domain",
+    "deleteConfirm": "Are you sure you want to delete this domain?",
+    "customRenewalUrl": "Custom Renewal URL (Optional)",
+    "whoisLookup": "WHOIS Lookup",
+    "whoisHint": "Click WHOIS button to query domain info, then fill in registrar and dates manually"
+  },
+  "filingStatus": {
+    "filed": "Filed",
+    "notFiled": "Not Filed",
+    "filing": "Filing",
+    "empty": "Not Set"
+  },
+  "registrar": {
+    "aliyun": "Alibaba Cloud",
+    "tencent": "Tencent Cloud",
+    "huawei": "Huawei Cloud",
+    "west": "West.cn",
+    "volcengine": "Volcengine",
+    "cloudflare": "Cloudflare",
+    "aws": "AWS",
+    "spaceship": "Spaceship",
+    "porkbun": "Porkbun",
+    "custom": "Custom",
+    "selectRegistrar": "Select Registrar"
+  },
+  "sort": {
+    "expiryAsc": "Expiry Date (Ascending)",
+    "expiryDesc": "Expiry Date (Descending)",
+    "nameAsc": "Domain Name (A-Z)",
+    "nameDesc": "Domain Name (Z-A)",
+    "createdAsc": "Created (Oldest)",
+    "createdDesc": "Created (Newest)"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidDomain": "Invalid domain format",
+    "invalidDate": "Invalid date",
+    "invalidPrice": "Invalid price"
+  },
+  "message": {
+    "domainAdded": "Domain added successfully",
+    "domainUpdated": "Domain updated successfully",
+    "domainDeleted": "Domain deleted successfully",
+    "operationFailed": "Operation failed",
+    "networkError": "Network error, please try again"
+  }
+}
+

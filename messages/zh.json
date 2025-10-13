@@ -1,0 +1,95 @@
+{
+  "common": {
+    "appName": "域名管理工具",
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "cancel": "取消",
+    "confirm": "确认",
+    "save": "保存",
+    "delete": "删除",
+    "edit": "编辑",
+    "add": "添加",
+    "search": "搜索",
+    "filter": "筛选",
+    "sort": "排序",
+    "reset": "重置",
+    "close": "关闭"
+  },
+  "auth": {
+    "login": "登录",
+    "logout": "退出登录",
+    "password": "密码",
+    "enterPassword": "请输入访问密码",
+    "incorrectPassword": "密码错误",
+    "loginRequired": "请先登录"
+  },
+  "domain": {
+    "domain": "域名",
+    "domains": "域名列表",
+    "addDomain": "添加域名",
+    "editDomain": "编辑域名",
+    "deleteDomain": "删除域名",
+    "domainName": "域名名称",
+    "registrar": "注册商",
+    "expiryDate": "到期时间",
+    "registrationDate": "注册时间",
+    "daysUntilExpiry": "距离到期",
+    "price": "价格",
+    "currency": "币种",
+    "filingStatus": "备案状态",
+    "renewalUrl": "续费链接",
+    "notes": "备注",
+    "renew": "续费",
+    "days": "天",
+    "expired": "已过期",
+    "expiringSoon": "即将到期",
+    "noDomains": "暂无域名",
+    "addFirstDomain": "添加第一个域名",
+    "deleteConfirm": "确定要删除此域名吗？",
+    "customRenewalUrl": "自定义续费链接（可选）",
+    "whoisLookup": "WHOIS 查询",
+    "whoisHint": "点击 WHOIS 按钮查询域名信息，然后手动填写注册商和时间"
+  },
+  "filingStatus": {
+    "filed": "已备案",
+    "notFiled": "未备案",
+    "filing": "备案中",
+    "empty": "未设置"
+  },
+  "registrar": {
+    "aliyun": "阿里云",
+    "tencent": "腾讯云",
+    "huawei": "华为云",
+    "west": "西部数码",
+    "volcengine": "火山引擎",
+    "cloudflare": "Cloudflare",
+    "aws": "AWS",
+    "spaceship": "Spaceship",
+    "porkbun": "Porkbun",
+    "custom": "自定义",
+    "selectRegistrar": "选择注册商"
+  },
+  "sort": {
+    "expiryAsc": "到期时间 (升序)",
+    "expiryDesc": "到期时间 (降序)",
+    "nameAsc": "域名 (A-Z)",
+    "nameDesc": "域名 (Z-A)",
+    "createdAsc": "添加时间 (最早)",
+    "createdDesc": "添加时间 (最新)"
+  },
+  "validation": {
+    "required": "此项必填",
+    "invalidDomain": "无效的域名格式",
+    "invalidDate": "无效的日期",
+    "invalidPrice": "无效的价格"
+  },
+  "message": {
+    "domainAdded": "域名添加成功",
+    "domainUpdated": "域名更新成功",
+    "domainDeleted": "域名删除成功",
+    "operationFailed": "操作失败",
+    "networkError": "网络错误，请重试"
+  }
+}
+
