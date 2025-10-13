@@ -7,12 +7,7 @@ import { Lock, Globe } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 
-import { setRequestLocale } from 'next-intl/server';
-
 export default function LoginPage({ params: { locale } }: { params: { locale: string } }) {
-  // 设置请求语言环境（修复静态渲染问题）
-  setRequestLocale(locale);
-  
   const t = useTranslations();
   const router = useRouter();
   const [password, setPassword] = useState('');
