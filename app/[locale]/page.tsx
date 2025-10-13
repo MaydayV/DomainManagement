@@ -113,20 +113,31 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
       const result = await response.json();
 
       if (result.success) {
-        // Refresh domains
-        const domainsResponse = await fetch(`/api/domains?sort=${sortBy}`, {
+        // 立即关闭弹窗
+        setIsFormOpen(false);
+        setEditingDomain(null);
+
+        // 刷新域名列表
+        const params = new URLSearchParams();
+        if (searchQuery) params.append('search', searchQuery);
+        if (registrarFilter) params.append('registrar', registrarFilter);
+        if (filingStatusFilter) params.append('filingStatus', filingStatusFilter);
+        params.append('sort', sortBy);
+
+        const domainsResponse = await fetch(`/api/domains?${params}`, {
           headers: { Authorization: `Bearer ${authToken}` },
         });
         const domainsData = await domainsResponse.json();
         if (domainsData.success) {
           setDomains(domainsData.data);
         }
-
-        setIsFormOpen(false);
-        setEditingDomain(null);
+      } else {
+        console.error('Submit failed:', result.error);
+        // 显示错误信息但不关闭弹窗
       }
     } catch (error) {
       console.error('Failed to submit domain:', error);
+      // 网络错误时也不关闭弹窗
     }
   };
 

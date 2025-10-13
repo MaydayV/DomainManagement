@@ -90,30 +90,40 @@ export function DomainForm({ domain, onSubmit, onCancel, locale }: DomainFormPro
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validate()) {
+    if (!validate() || isSubmitting) {
       return;
     }
 
-    const registrarValue = formData.registrar === 'custom' && customRegistrarName.trim() 
-      ? `custom-${customRegistrarName.trim()}` 
-      : formData.registrar;
+    setIsSubmitting(true);
 
-    const submitData: Partial<Domain> = {
-      name: formData.name.trim(),
-      registrar: registrarValue,
-      expiryDate: new Date(formData.expiryDate).toISOString(),
-      registrationDate: formData.registrationDate ? new Date(formData.registrationDate).toISOString() : undefined,
-      price: Number(formData.price) || 0,
-      currency: formData.currency,
-      filingStatus: formData.filingStatus,
-      renewalUrl: formData.renewalUrl.trim() || undefined,
-      notes: formData.notes.trim() || undefined,
-    };
+    try {
+      const registrarValue = formData.registrar === 'custom' && customRegistrarName.trim() 
+        ? `custom-${customRegistrarName.trim()}` 
+        : formData.registrar;
 
-    onSubmit(submitData);
+      const submitData: Partial<Domain> = {
+        name: formData.name.trim(),
+        registrar: registrarValue,
+        expiryDate: new Date(formData.expiryDate).toISOString(),
+        registrationDate: formData.registrationDate ? new Date(formData.registrationDate).toISOString() : undefined,
+        price: Number(formData.price) || 0,
+        currency: formData.currency,
+        filingStatus: formData.filingStatus,
+        renewalUrl: formData.renewalUrl.trim() || undefined,
+        notes: formData.notes.trim() || undefined,
+      };
+
+      await onSubmit(submitData);
+    } catch (error) {
+      console.error('Submit error:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const registrarOptions = [
@@ -275,10 +285,20 @@ export function DomainForm({ domain, onSubmit, onCancel, locale }: DomainFormPro
       </div>
 
       <div className="flex gap-3 pt-4">
-        <Button type="submit" variant="primary" className="flex-1">
-          {t('common.save')}
+        <Button 
+          type="submit" 
+          variant="primary" 
+          className="flex-1" 
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? t('common.loading') : t('common.save')}
         </Button>
-        <Button type="button" variant="secondary" onClick={onCancel}>
+        <Button 
+          type="button" 
+          variant="secondary" 
+          onClick={onCancel}
+          disabled={isSubmitting}
+        >
           {t('common.cancel')}
         </Button>
       </div>
