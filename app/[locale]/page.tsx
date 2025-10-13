@@ -13,7 +13,12 @@ import { DomainForm } from '@/components/DomainForm';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 
+import { setRequestLocale } from 'next-intl/server';
+
 export default function HomePage({ params: { locale } }: { params: { locale: string } }) {
+  // 设置请求语言环境（修复静态渲染问题）
+  setRequestLocale(locale);
+  
   const t = useTranslations();
   const router = useRouter();
 

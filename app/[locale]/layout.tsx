@@ -1,4 +1,5 @@
 import { NextIntlClientProvider } from 'next-intl';
+import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import '../globals.css';
 
@@ -13,12 +14,17 @@ export default async function LocaleLayout({
   children: React.ReactNode;
   params: { locale: string };
 }) {
-  let messages;
-  try {
-    messages = (await import(`@/messages/${locale}.json`)).default;
-  } catch (error) {
+  // 验证语言
+  const locales = ['zh', 'en'];
+  if (!locales.includes(locale)) {
     notFound();
   }
+
+  // 设置请求语言环境（修复 next-intl 静态渲染问题）
+  setRequestLocale(locale);
+
+  // 获取消息
+  const messages = await getMessages();
 
   return (
     <html lang={locale}>
