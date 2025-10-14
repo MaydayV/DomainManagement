@@ -112,7 +112,9 @@
     "importFailed": "Import failed, please check CSV format", 
     "importSuccess": "Successfully imported {count} domains",
     "exportSuccess": "Data exported successfully",
-    "whoisFailed": "WHOIS query failed, please check domain format"
+    "whoisFailed": "WHOIS query failed, please check domain format",
+    "networkDelayWarning": "Network timeout occurred, but data may have been saved successfully. Please close this dialog and refresh the page to check latest data.",
+    "retrying": "Network delay, retrying... (attempt {attempt})"
   },
   "stats": {
     "totalDomains": "Total Domains",

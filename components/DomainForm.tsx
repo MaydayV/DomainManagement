@@ -16,9 +16,11 @@ interface DomainFormProps {
   onSubmit: (data: Partial<Domain>) => void;
   onCancel: () => void;
   locale: string;
+  isSubmitting?: boolean;
+  submitError?: string;
 }
 
-export function DomainForm({ domain, onSubmit, onCancel, locale }: DomainFormProps) {
+export function DomainForm({ domain, onSubmit, onCancel, locale, isSubmitting = false, submitError = '' }: DomainFormProps) {
   const t = useTranslations();
   const [formData, setFormData] = useState({
     name: '',
@@ -95,7 +97,7 @@ export function DomainForm({ domain, onSubmit, onCancel, locale }: DomainFormPro
     return Object.keys(newErrors).length === 0;
   };
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localSubmitting, setLocalSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,7 +106,7 @@ export function DomainForm({ domain, onSubmit, onCancel, locale }: DomainFormPro
       return;
     }
 
-    setIsSubmitting(true);
+    setLocalSubmitting(true);
 
     try {
       const registrarValue = formData.registrar === 'custom' && customRegistrarName.trim() 
@@ -127,7 +129,7 @@ export function DomainForm({ domain, onSubmit, onCancel, locale }: DomainFormPro
     } catch (error) {
       console.error('Submit error:', error);
     } finally {
-      setIsSubmitting(false);
+      setLocalSubmitting(false);
     }
   };
 
@@ -391,6 +393,15 @@ export function DomainForm({ domain, onSubmit, onCancel, locale }: DomainFormPro
         />
       </div>
 
+      {/* 错误提示 */}
+      {submitError && (
+        <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+          <p className="text-sm text-yellow-800">
+            ⚠️ {submitError}
+          </p>
+        </div>
+      )}
+
       <div className="flex gap-3 pt-4">
         <Button 
           type="submit" 
@@ -398,7 +409,14 @@ export function DomainForm({ domain, onSubmit, onCancel, locale }: DomainFormPro
           className="flex-1" 
           disabled={isSubmitting}
         >
-          {isSubmitting ? t('common.loading') : t('common.save')}
+          {(isSubmitting || localSubmitting) ? (
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              {t('common.loading')}
+            </div>
+          ) : (
+            t('common.save')
+          )}
         </Button>
         <Button 
           type="button" 

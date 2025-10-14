@@ -14,6 +14,7 @@ import { StatsPanel } from '@/components/StatsPanel';
 import { ImportExportPanel } from '@/components/ImportExportPanel';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { apiWithRetry } from '@/lib/api-retry';
 
 export default function HomePage({ params: { locale } }: { params: { locale: string } }) {
   const t = useTranslations();
@@ -145,8 +146,14 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
     }
   };
 
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string>('');
+
   const handleSubmitDomain = async (data: Partial<Domain>) => {
     console.log('📝 Submitting domain:', data);
+    
+    setSubmitting(true);
+    setSubmitError('');
     
     try {
       const url = editingDomain
@@ -155,50 +162,79 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
 
       const method = editingDomain ? 'PUT' : 'POST';
 
-      const response = await fetch(url, {
+      // 使用重试机制的 API 调用
+      const result = await apiWithRetry(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify(data),
+      }, {
+        maxRetries: 2, // 最多重试2次
+        baseDelay: 1000, // 1秒基础延迟
+        timeout: 15000, // 15秒超时
       });
 
-      const result = await response.json();
       console.log('✅ Submit result:', result);
 
       if (result.success) {
-        console.log('🚪 Closing modal and refreshing...');
+        console.log('🚪 Domain saved successfully, closing modal...');
         
-        // 立即关闭弹窗和清理状态
+        // 立即关闭弹窗（乐观更新）
         setIsFormOpen(false);
         setEditingDomain(null);
-        setOpenMenuId(null); // 同时关闭任何打开的菜单
+        setOpenMenuId(null);
 
-        // 延迟一下再刷新，确保状态更新完成
+        // 乐观更新：先在前端显示新域名
+        if (!editingDomain && result.data) {
+          setDomains(prev => [...prev, result.data as Domain]);
+        } else if (editingDomain && result.data) {
+          setDomains(prev => prev.map(d => d.id === editingDomain.id ? result.data as Domain : d));
+        }
+
+        // 后台验证：延迟刷新确保数据一致性
         setTimeout(async () => {
-          const params = new URLSearchParams();
-          if (searchQuery) params.append('search', searchQuery);
-          if (registrarFilter) params.append('registrar', registrarFilter);
-          if (filingStatusFilter) params.append('filingStatus', filingStatusFilter);
-          params.append('sort', sortBy);
+          try {
+            const params = new URLSearchParams();
+            if (searchQuery) params.append('search', searchQuery);
+            if (registrarFilter) params.append('registrar', registrarFilter);
+            if (filingStatusFilter) params.append('filingStatus', filingStatusFilter);
+            params.append('sort', sortBy);
 
-          const domainsResponse = await fetch(`/api/domains?${params}`, {
-            headers: { Authorization: `Bearer ${authToken}` },
-          });
-          const domainsData = await domainsResponse.json();
-          if (domainsData.success) {
-            setDomains(domainsData.data);
+            const domainsResponse = await fetch(`/api/domains?${params}`, {
+              headers: { Authorization: `Bearer ${authToken}` },
+            });
+            const domainsData = await domainsResponse.json();
+            if (domainsData.success) {
+              setDomains(domainsData.data);
+            }
+          } catch (error) {
+            console.log('🔄 Background refresh failed, but domain should be saved');
           }
-        }, 100);
+        }, 2000);
         
       } else {
         console.error('❌ Submit failed:', result.error);
-        alert(result.error || t('message.operationFailed'));
+        
+        // 区分错误类型
+        if (result.error?.includes('timeout') || result.error?.includes('Network')) {
+          setSubmitError(
+            t('message.networkDelayWarning') || 
+            '网络延迟，数据可能已保存成功。请关闭弹窗并刷新页面检查。'
+          );
+        } else {
+          setSubmitError(result.error || t('message.operationFailed'));
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Network error:', error);
-      alert(t('message.networkError'));
+      setSubmitError(
+        t('message.networkDelayWarning') || 
+        '网络延迟，数据可能已保存成功。请关闭弹窗并刷新页面检查。'
+      );
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -310,8 +346,11 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
           onCancel={() => {
             setIsFormOpen(false);
             setEditingDomain(null);
+            setSubmitError('');
           }}
           locale={locale}
+          isSubmitting={submitting}
+          submitError={submitError}
         />
       </Modal>
 

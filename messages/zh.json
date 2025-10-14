@@ -112,7 +112,9 @@
     "importFailed": "导入失败，请检查 CSV 格式",
     "importSuccess": "成功导入 {count} 个域名",
     "exportSuccess": "数据导出成功",
-    "whoisFailed": "WHOIS 查询失败，请检查域名格式"
+    "whoisFailed": "WHOIS 查询失败，请检查域名格式",
+    "networkDelayWarning": "网络延迟导致响应超时，但数据可能已保存成功。请关闭弹窗并刷新页面查看最新数据。",
+    "retrying": "网络延迟，正在重试... (第 {attempt} 次)"
   },
   "stats": {
     "totalDomains": "域名总数",
