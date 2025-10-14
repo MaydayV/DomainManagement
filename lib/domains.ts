@@ -2,20 +2,27 @@ import { Domain, FilterOptions, SortOption } from '@/types';
 import { promises as fs } from 'fs';
 import path from 'path';
 
-// 检测是否在 Vercel 环境
-const IS_VERCEL = process.env.VERCEL === '1';
+// 检测是否在 Vercel 环境 - 更准确的检测
+const IS_VERCEL = !!(process.env.VERCEL || process.env.VERCEL_ENV);
 const DATA_FILE = path.join(process.cwd(), 'data', 'domains.json');
 const KV_KEY = 'domains';
 
-// 动态导入 KV（避免在本地环境出错）
+// 动态导入 KV
 let kv: any = null;
-if (IS_VERCEL) {
-  try {
-    kv = require('@vercel/kv').kv;
-  } catch (error) {
-    console.warn('Vercel KV not available, falling back to file storage');
-  }
+try {
+  kv = require('@vercel/kv').kv;
+  console.log('✅ Vercel KV imported successfully');
+} catch (error) {
+  console.warn('⚠️ Vercel KV not available:', error);
 }
+
+// 验证 KV 配置
+const hasKvConfig = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+console.log('🔍 Environment check:', {
+  IS_VERCEL,
+  hasKvConfig,
+  hasKV: !!kv,
+});
 
 // 确保数据目录存在
 async function ensureDataDirectory() {
@@ -29,48 +36,77 @@ async function ensureDataDirectory() {
 
 // 读取域名数据
 export async function getDomains(): Promise<Domain[]> {
-  // Vercel 环境：优先从 KV 读取
-  if (IS_VERCEL && kv) {
+  console.log('📖 Reading domains, environment:', { IS_VERCEL, hasKV: !!kv, hasKvConfig });
+  
+  // Vercel 环境且有 KV：从 KV 读取
+  if (IS_VERCEL && kv && hasKvConfig) {
     try {
+      console.log('📡 Reading from KV...');
       const data = await kv.get(KV_KEY);
+      console.log('✅ KV read success:', Array.isArray(data) ? `${data.length} domains` : 'no data');
       return data || [];
     } catch (error) {
-      console.error('Failed to read from KV:', error);
-      // KV 失败时降级到文件读取
+      console.error('❌ Failed to read from KV:', error);
+      console.error('🔧 Attempting file storage fallback...');
     }
   }
 
   // 本地环境或 KV 失败时：从文件读取
-  try {
-    await ensureDataDirectory();
-    const data = await fs.readFile(DATA_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch (error) {
-    // 文件不存在时返回空数组
+  if (!IS_VERCEL) {
+    try {
+      await ensureDataDirectory();
+      const data = await fs.readFile(DATA_FILE, 'utf-8');
+      console.log('📄 File read success');
+      return JSON.parse(data);
+    } catch (error) {
+      console.log('📄 File not found, returning empty array');
+      return [];
+    }
+  } else {
+    // Vercel 环境但 KV 不可用
+    console.error('🚨 CRITICAL: In Vercel but KV not available!');
     return [];
   }
 }
 
 // 保存域名数据
 export async function saveDomains(domains: Domain[]): Promise<void> {
-  // Vercel 环境：保存到 KV
-  if (IS_VERCEL && kv) {
+  console.log('💾 Saving domains, environment:', { IS_VERCEL, hasKV: !!kv, hasKvConfig, count: domains.length });
+  
+  // Vercel 环境：必须使用 KV
+  if (IS_VERCEL && kv && hasKvConfig) {
     try {
+      console.log('📡 Saving to KV...');
       await kv.set(KV_KEY, domains);
-      console.log(`Saved ${domains.length} domains to KV`);
-      // 同时保存到文件作为备份（临时）
-      await ensureDataDirectory();
-      await fs.writeFile(DATA_FILE, JSON.stringify(domains, null, 2), 'utf-8');
+      console.log(`✅ Saved ${domains.length} domains to KV successfully`);
       return;
-    } catch (error) {
-      console.error('Failed to save to KV:', error);
-      // KV 失败时降级到文件保存
+    } catch (error: any) {
+      console.error('❌ Failed to save to KV:', error);
+      throw new Error(`KV save failed: ${error?.message || 'Unknown error'}`);
     }
   }
 
-  // 本地环境或 KV 失败时：保存到文件
-  await ensureDataDirectory();
-  await fs.writeFile(DATA_FILE, JSON.stringify(domains, null, 2), 'utf-8');
+  // 本地环境：使用文件存储
+  if (!IS_VERCEL) {
+    try {
+      await ensureDataDirectory();
+      await fs.writeFile(DATA_FILE, JSON.stringify(domains, null, 2), 'utf-8');
+      console.log(`✅ Saved ${domains.length} domains to file`);
+      return;
+    } catch (error: any) {
+      console.error('❌ Failed to save to file:', error);
+      throw new Error(`File save failed: ${error?.message || 'Unknown error'}`);
+    }
+  }
+
+  // Vercel 环境但 KV 不可用
+  console.error('🚨 CRITICAL ERROR: In Vercel environment but KV is not available!');
+  console.error('🔧 KV Configuration:', {
+    KV_REST_API_URL: !!process.env.KV_REST_API_URL,
+    KV_REST_API_TOKEN: !!process.env.KV_REST_API_TOKEN,
+    KV_URL: !!process.env.KV_URL,
+  });
+  throw new Error('KV database not available in Vercel environment');
 }
 
 // 获取单个域名
@@ -79,9 +115,17 @@ export async function getDomainById(id: string): Promise<Domain | null> {
   return domains.find(d => d.id === id) || null;
 }
 
-// 添加域名
+// 添加域名（包含去重检查）
 export async function addDomain(domain: Omit<Domain, 'id' | 'createdAt' | 'updatedAt'>): Promise<Domain> {
   const domains = await getDomains();
+  
+  // 检查域名是否已存在
+  const existingDomain = domains.find(d => d.name.toLowerCase() === domain.name.toLowerCase());
+  if (existingDomain) {
+    console.log('⚠️ Domain already exists:', domain.name);
+    throw new Error(`Domain "${domain.name}" already exists in the database`);
+  }
+  
   const now = new Date().toISOString();
   
   const newDomain: Domain = {
@@ -91,9 +135,11 @@ export async function addDomain(domain: Omit<Domain, 'id' | 'createdAt' | 'updat
     updatedAt: now,
   };
   
+  console.log('➕ Adding new domain:', newDomain.name);
   domains.push(newDomain);
   await saveDomains(domains);
   
+  console.log('✅ Domain added successfully:', newDomain.name);
   return newDomain;
 }
 

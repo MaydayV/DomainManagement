@@ -67,6 +67,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('📝 Adding domain:', body.name);
+    
     const newDomain = await addDomain({
       name: body.name,
       registrar: body.registrar,
@@ -79,14 +81,33 @@ export async function POST(request: NextRequest) {
       notes: body.notes,
     });
 
+    console.log('✅ Domain added:', newDomain.name);
+
     return NextResponse.json({
       success: true,
       data: newDomain,
     });
-  } catch (error) {
-    console.error('Add domain error:', error);
+  } catch (error: any) {
+    console.error('❌ Add domain error:', error);
+    
+    // 处理重复域名错误
+    if (error.message?.includes('already exists')) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 409 } // Conflict
+      );
+    }
+    
+    // 处理 KV 相关错误
+    if (error.message?.includes('KV') || error.message?.includes('read-only')) {
+      return NextResponse.json(
+        { success: false, error: 'Database connection issue. Please try again or contact support.' },
+        { status: 503 } // Service Unavailable
+      );
+    }
+    
     return NextResponse.json(
-      { success: false, error: 'Failed to add domain' },
+      { success: false, error: 'Failed to add domain. Please try again.' },
       { status: 500 }
     );
   }

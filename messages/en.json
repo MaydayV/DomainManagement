@@ -114,7 +114,9 @@
     "exportSuccess": "Data exported successfully",
     "whoisFailed": "WHOIS query failed, please check domain format",
     "networkDelayWarning": "Network timeout occurred, but data may have been saved successfully. Please close this dialog and refresh the page to check latest data.",
-    "retrying": "Network delay, retrying... (attempt {attempt})"
+    "retrying": "Network delay, retrying... (attempt {attempt})",
+    "domainExists": "Domain \"{domain}\" already exists, cannot add duplicate",
+    "databaseError": "Database connection issue, please try again later"
   },
   "stats": {
     "totalDomains": "Total Domains",
