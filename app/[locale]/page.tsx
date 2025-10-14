@@ -86,7 +86,7 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [authToken, searchQuery, registrarFilter, filingStatusFilter, sortBy]);
+  }, [authToken, searchQuery, registrarFilter, filingStatusFilter, sortBy, domains.length]);
 
   // Handlers
   const handleLogout = () => {

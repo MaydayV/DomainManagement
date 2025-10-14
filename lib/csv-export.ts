@@ -1,4 +1,4 @@
-import { Domain } from '@/types';
+import { Domain, FilingStatus } from '@/types';
 import { getRegistrarById } from './registrars';
 import { formatPrice } from './currencies';
 
@@ -51,7 +51,7 @@ export function parseCSV(csvContent: string): Partial<Domain>[] {
       expiryDate: values[3] ? new Date(values[3]).toISOString() : new Date().toISOString(),
       price: parseFloat(values[4]) || 0,
       currency: values[5] || 'CNY',
-      filingStatus: mapFilingStatus(values[6]),
+      filingStatus: mapFilingStatus(values[6]) as FilingStatus,
       renewalUrl: values[7] || undefined,
       notes: values[8] || undefined,
     };
@@ -84,8 +84,8 @@ function mapRegistrarName(name: string): string {
 }
 
 // 映射备案状态
-function mapFilingStatus(status: string): string {
-  const mapping: Record<string, string> = {
+function mapFilingStatus(status: string): 'filed' | 'not-filed' | 'filing' | '' {
+  const mapping: Record<string, 'filed' | 'not-filed' | 'filing'> = {
     '已备案': 'filed',
     'Filed': 'filed',
     '未备案': 'not-filed', 

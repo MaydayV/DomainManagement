@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
 
     // 检查本地缓存（避免重复查询）
     const cacheKey = `whois_${domain}`;
-    const cached = global.whoisCache?.[cacheKey];
+    const cached = globalThis.whoisCache?.[cacheKey];
     
     if (cached && (Date.now() - cached.timestamp) < 3600000) { // 1小时缓存
       console.log('🎯 Using cached WHOIS data for:', domain);
@@ -86,8 +86,8 @@ export async function GET(request: NextRequest) {
     };
 
     // 缓存结果
-    if (!global.whoisCache) global.whoisCache = {};
-    global.whoisCache[cacheKey] = {
+    if (!globalThis.whoisCache) globalThis.whoisCache = {};
+    globalThis.whoisCache[cacheKey] = {
       data: responseData,
       timestamp: Date.now(),
     };
