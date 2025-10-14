@@ -50,7 +50,17 @@
     "deleteConfirm": "Are you sure you want to delete this domain?",
     "customRenewalUrl": "Custom Renewal URL (Optional)",
     "whoisLookup": "WHOIS Lookup",
-    "whoisHint": "Click WHOIS button to query domain info, then fill in registrar and dates manually"
+    "whoisAutoFill": "WHOIS Auto-Fill",
+    "whoisHint": "Click WHOIS button to query domain info, then fill in registrar and dates manually",
+    "whoisAutoFillHint": "Click WHOIS button to auto-query and fill registrar, registration date, expiry date",
+    "whoisQuerying": "Querying WHOIS...",
+    "whoisSuccess": "WHOIS query successful, information auto-filled",
+    "export": "Export",
+    "import": "Import",
+    "exportCSV": "Export as CSV",
+    "importCSV": "Import from CSV",
+    "template": "Template", 
+    "downloadTemplate": "Download CSV Template"
   },
   "filingStatus": {
     "filed": "Filed",
@@ -93,9 +103,16 @@
   "message": {
     "domainAdded": "Domain added successfully",
     "domainUpdated": "Domain updated successfully",
-    "domainDeleted": "Domain deleted successfully",
+    "domainDeleted": "Domain deleted successfully", 
     "operationFailed": "Operation failed",
-    "networkError": "Network error, please try again"
+    "networkError": "Network error, please try again",
+    "noDataToExport": "No data to export",
+    "invalidCSVFormat": "Invalid CSV format",
+    "importConfirm": "Import {count} domains? Existing data will not be deleted.",
+    "importFailed": "Import failed, please check CSV format", 
+    "importSuccess": "Successfully imported {count} domains",
+    "exportSuccess": "Data exported successfully",
+    "whoisFailed": "WHOIS query failed, please check domain format"
   },
   "stats": {
     "totalDomains": "Total Domains",

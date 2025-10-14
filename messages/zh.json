@@ -50,7 +50,17 @@
     "deleteConfirm": "确定要删除此域名吗？",
     "customRenewalUrl": "自定义续费链接（可选）",
     "whoisLookup": "WHOIS 查询",
-    "whoisHint": "点击 WHOIS 按钮查询域名信息，然后手动填写注册商和时间"
+    "whoisAutoFill": "WHOIS 自动填充",
+    "whoisHint": "点击 WHOIS 按钮查询域名信息，然后手动填写注册商和时间",
+    "whoisAutoFillHint": "点击 WHOIS 按钮自动查询并填充注册商、注册时间、到期时间",
+    "whoisQuerying": "正在查询 WHOIS...", 
+    "whoisSuccess": "WHOIS 查询成功，信息已自动填充",
+    "export": "导出",
+    "import": "导入",
+    "exportCSV": "导出为 CSV",
+    "importCSV": "从 CSV 导入",
+    "template": "模板",
+    "downloadTemplate": "下载 CSV 模板"
   },
   "filingStatus": {
     "filed": "已备案",
@@ -92,10 +102,17 @@
   },
   "message": {
     "domainAdded": "域名添加成功",
-    "domainUpdated": "域名更新成功",
+    "domainUpdated": "域名更新成功", 
     "domainDeleted": "域名删除成功",
     "operationFailed": "操作失败",
-    "networkError": "网络错误，请重试"
+    "networkError": "网络错误，请重试",
+    "noDataToExport": "没有数据可以导出",
+    "invalidCSVFormat": "CSV 格式无效",
+    "importConfirm": "确定要导入 {count} 个域名吗？现有数据不会被删除。",
+    "importFailed": "导入失败，请检查 CSV 格式",
+    "importSuccess": "成功导入 {count} 个域名",
+    "exportSuccess": "数据导出成功",
+    "whoisFailed": "WHOIS 查询失败，请检查域名格式"
   },
   "stats": {
     "totalDomains": "域名总数",

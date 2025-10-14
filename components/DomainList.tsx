@@ -33,19 +33,16 @@ export function DomainList({ domains, onEdit, onDelete, locale, openMenuId, onMe
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 domain-grid">
       {domains.map((domain, index) => (
-        <div
+        <DomainCard
           key={domain.id}
-          style={{ animationDelay: `${index * 0.05}s` }}
-        >
-          <DomainCard
-            domain={domain}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            locale={locale}
-            isMenuOpen={openMenuId === domain.id}
-            onMenuToggle={(isOpen) => onMenuToggle(isOpen ? domain.id : null)}
-          />
-        </div>
+          domain={domain}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          locale={locale}
+          isMenuOpen={openMenuId === domain.id}
+          onMenuToggle={(isOpen) => onMenuToggle(isOpen ? domain.id : null)}
+          animationDelay={index * 0.05}
+        />
       ))}
     </div>
   );

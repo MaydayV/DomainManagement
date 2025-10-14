@@ -58,7 +58,21 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    const updatedDomain = await updateDomain(params.id, body);
+    
+    // 确保所有字段都被正确处理
+    const updateData = {
+      name: body.name,
+      registrar: body.registrar,
+      expiryDate: body.expiryDate,
+      registrationDate: body.registrationDate, // 🔧 确保编辑时也包含注册时间
+      price: body.price,
+      currency: body.currency,
+      filingStatus: body.filingStatus,
+      renewalUrl: body.renewalUrl,
+      notes: body.notes,
+    };
+
+    const updatedDomain = await updateDomain(params.id, updateData);
 
     if (!updatedDomain) {
       return NextResponse.json(

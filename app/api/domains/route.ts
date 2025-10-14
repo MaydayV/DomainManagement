@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
       name: body.name,
       registrar: body.registrar,
       expiryDate: body.expiryDate,
+      registrationDate: body.registrationDate, // 🔧 修复：添加注册时间字段
       price: body.price || 0,
       currency: body.currency || 'CNY',
       filingStatus: body.filingStatus || '',

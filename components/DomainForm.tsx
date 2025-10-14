@@ -9,7 +9,7 @@ import { Button } from './ui/Button';
 import { DateInput } from './ui/DateInput';
 import { DEFAULT_REGISTRARS } from '@/lib/registrars';
 import { CURRENCIES } from '@/lib/currencies';
-import { isValidDomain } from '@/lib/utils';
+import { isValidDomain, cn } from '@/lib/utils';
 
 interface DomainFormProps {
   domain?: Domain | null;
@@ -36,6 +36,7 @@ export function DomainForm({ domain, onSubmit, onCancel, locale }: DomainFormPro
   const [whoisLoading, setWhoisLoading] = useState(false);
   const [showCustomRegistrar, setShowCustomRegistrar] = useState(false);
   const [customRegistrarName, setCustomRegistrarName] = useState('');
+  const [whoisData, setWhoisData] = useState<any>(null);
 
   useEffect(() => {
     if (domain) {
@@ -82,8 +83,12 @@ export function DomainForm({ domain, onSubmit, onCancel, locale }: DomainFormPro
       newErrors.expiryDate = t('validation.required');
     }
 
-    if (formData.price && isNaN(Number(formData.price))) {
-      newErrors.price = t('validation.invalidPrice');
+    if (!formData.registrationDate) {
+      newErrors.registrationDate = t('validation.required');
+    }
+
+    if (!formData.price || isNaN(Number(formData.price)) || Number(formData.price) <= 0) {
+      newErrors.price = t('validation.required');
     }
 
     setErrors(newErrors);
@@ -149,13 +154,65 @@ export function DomainForm({ domain, onSubmit, onCancel, locale }: DomainFormPro
     { value: 'filing', label: t('filingStatus.filing') },
   ];
 
-  // WHOIS 查询辅助功能
-  const handleWhoisLookup = () => {
+  // WHOIS 自动查询和填充功能
+  const handleWhoisLookup = async () => {
     if (!formData.name) {
       return;
     }
-    // 打开 WHOIS 查询页面供用户参考
-    window.open(`https://mwhois.chinaz.com/${formData.name}`, '_blank', 'noopener,noreferrer');
+
+    setWhoisLoading(true);
+    setWhoisData(null);
+
+    try {
+      // 调用我们的 WHOIS API
+      const response = await fetch(`/api/whois?domain=${encodeURIComponent(formData.name)}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        const data = result.data;
+        setWhoisData(data);
+
+        // 自动填充表单
+        const updates: any = {};
+        
+        // 设置注册商
+        if (data.registrar) {
+          updates.registrar = data.registrar;
+          setShowCustomRegistrar(data.registrar === 'custom' || data.registrar.startsWith('custom-'));
+          if (data.registrar.startsWith('custom-')) {
+            setCustomRegistrarName(data.registrarName || data.registrar.substring(7));
+          }
+        }
+
+        // 设置注册时间
+        if (data.registrationDate) {
+          updates.registrationDate = new Date(data.registrationDate).toISOString().split('T')[0];
+        }
+
+        // 设置到期时间
+        if (data.expiryDate) {
+          updates.expiryDate = new Date(data.expiryDate).toISOString().split('T')[0];
+        }
+
+        // 更新表单数据
+        setFormData(prev => ({ ...prev, ...updates }));
+
+        console.log('✅ WHOIS data auto-filled:', data);
+      } else {
+        console.error('WHOIS lookup failed:', result.error);
+        alert(t('message.whoisFailed') || 'WHOIS 查询失败');
+      }
+    } catch (error) {
+      console.error('WHOIS error:', error);
+      alert(t('message.networkError'));
+    } finally {
+      setWhoisLoading(false);
+    }
   };
 
   return (
@@ -175,15 +232,62 @@ export function DomainForm({ domain, onSubmit, onCancel, locale }: DomainFormPro
           <button
             type="button"
             onClick={handleWhoisLookup}
-            disabled={!formData.name}
-            className="px-4 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
-            title={t('domain.whoisLookup')}
+            disabled={!formData.name || whoisLoading}
+            className={cn(
+              "px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap",
+              whoisLoading 
+                ? "bg-yellow-50 text-yellow-600 border border-yellow-200" 
+                : "text-primary-600 bg-primary-50 hover:bg-primary-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            )}
+            title={whoisLoading ? t('domain.whoisQuerying') : t('domain.whoisAutoFill')}
           >
-            WHOIS
+            {whoisLoading ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-yellow-600 border-t-transparent rounded-full animate-spin"></div>
+                {t('common.loading')}
+              </div>
+            ) : (
+              'WHOIS'
+            )}
           </button>
         </div>
         {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
-        <p className="mt-1 text-xs text-slate-500">{t('domain.whoisHint')}</p>
+        <div className="mt-1 text-xs text-slate-500">
+          <p>{t('domain.whoisAutoFillHint')}</p>
+          {whoisLoading && (
+            <div className="mt-2 p-2 bg-blue-50 rounded-md border border-blue-200">
+              <p className="text-blue-700 font-medium">🔍 {t('domain.whoisQuerying')}</p>
+            </div>
+          )}
+          {whoisData && (
+            <div className="mt-2 p-2 bg-green-50 rounded-md border border-green-200">
+              <p className="text-green-700 font-medium flex items-center gap-1">
+                ✅ {t('domain.whoisSuccess')}
+                <span className="text-xs bg-green-200 text-green-800 px-1 rounded">
+                  {whoisData.source || 'whois'}
+                </span>
+              </p>
+              <p className="text-green-600 text-xs">
+                {t('domain.registrar')}: {whoisData.registrarName}
+              </p>
+              {whoisData.registrationDate && (
+                <p className="text-green-600 text-xs">
+                  {t('domain.registrationDate')}: {new Date(whoisData.registrationDate).toLocaleDateString(locale)}
+                </p>
+              )}
+              {whoisData.expiryDate && (
+                <p className="text-green-600 text-xs">
+                  {t('domain.expiryDate')}: {new Date(whoisData.expiryDate).toLocaleDateString(locale)}
+                </p>
+              )}
+              {whoisData.queryTime && (
+                <p className="text-green-500 text-xs">
+                  查询耗时: {whoisData.queryTime}s
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <div>
@@ -225,6 +329,8 @@ export function DomainForm({ domain, onSubmit, onCancel, locale }: DomainFormPro
           label={t('domain.registrationDate')}
           value={formData.registrationDate ? new Date(formData.registrationDate).toISOString() : ''}
           onChange={(value) => setFormData({ ...formData, registrationDate: value.split('T')[0] })}
+          error={errors.registrationDate}
+          required
           locale={locale}
         />
 
@@ -248,6 +354,7 @@ export function DomainForm({ domain, onSubmit, onCancel, locale }: DomainFormPro
           onChange={(e) => setFormData({ ...formData, price: e.target.value })}
           placeholder="0.00"
           error={errors.price}
+          required
         />
 
         <Select

@@ -15,9 +15,10 @@ interface DomainCardProps {
   locale: string;
   isMenuOpen: boolean;
   onMenuToggle: (isOpen: boolean) => void;
+  animationDelay?: number;
 }
 
-export function DomainCard({ domain, onEdit, onDelete, locale, isMenuOpen, onMenuToggle }: DomainCardProps) {
+export function DomainCard({ domain, onEdit, onDelete, locale, isMenuOpen, onMenuToggle, animationDelay = 0 }: DomainCardProps) {
   const t = useTranslations();
   const daysUntilExpiry = getDaysUntilExpiry(domain.expiryDate);
   const expiryStatus = getExpiryStatus(domain.expiryDate);
@@ -67,12 +68,17 @@ export function DomainCard({ domain, onEdit, onDelete, locale, isMenuOpen, onMen
   return (
     <div 
       className={cn(
-        'relative bg-white rounded-xl border transition-all hover:shadow-2xl hover:-translate-y-1 group p-5 animate-slide-up',
+        'relative bg-white rounded-xl border transition-all hover:shadow-2xl hover:-translate-y-1 group p-5',
         isExpired ? 'border-slate-300 bg-slate-50 opacity-60' : 'border-slate-200',
         isExpiringSoon && !isExpired && 'border-yellow-300 bg-yellow-50/30 shadow-sm',
         isMenuOpen && 'z-[50]' // 打开菜单时提升卡片层级
       )}
-      style={{ animationDelay: '0.1s' }}
+      style={{ 
+        animationDelay: `${animationDelay}s`,
+        // 避免闪烁，使用 opacity 控制显示
+        opacity: animationDelay > 0 ? 0 : 1,
+        animation: animationDelay > 0 ? `slideUp 0.3s ease-out ${animationDelay}s forwards` : 'none'
+      }}
       onClick={() => {
         // 点击卡片其他区域关闭菜单
         if (isMenuOpen) {

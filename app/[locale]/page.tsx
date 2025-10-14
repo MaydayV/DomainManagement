@@ -11,6 +11,7 @@ import { FilterBar } from '@/components/FilterBar';
 import { DomainList } from '@/components/DomainList';
 import { DomainForm } from '@/components/DomainForm';
 import { StatsPanel } from '@/components/StatsPanel';
+import { ImportExportPanel } from '@/components/ImportExportPanel';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 
@@ -50,6 +51,12 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
   useEffect(() => {
     if (!authToken) return;
 
+    // 设置加载状态（但不在初始加载时显示，避免闪烁）
+    const isInitialLoad = domains.length === 0;
+    if (!isInitialLoad) {
+      setLoading(true);
+    }
+
     const fetchDomains = async () => {
       try {
         const params = new URLSearchParams();
@@ -73,7 +80,12 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
       }
     };
 
-    fetchDomains();
+    // 延迟执行，避免频繁调用
+    const timeoutId = setTimeout(fetchDomains, 100);
+    
+    return () => {
+      clearTimeout(timeoutId);
+    };
   }, [authToken, searchQuery, registrarFilter, filingStatusFilter, sortBy]);
 
   // Handlers
@@ -96,7 +108,46 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
     setDeletingDomain(domain);
   };
 
+  const handleImportDomains = async (importedDomains: Partial<Domain>[]) => {
+    try {
+      for (const domainData of importedDomains) {
+        const response = await fetch('/api/domains', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify(domainData),
+        });
+
+        const result = await response.json();
+        if (!result.success) {
+          console.error('Failed to import domain:', domainData.name, result.error);
+        }
+      }
+
+      // 刷新域名列表
+      const params = new URLSearchParams();
+      params.append('sort', sortBy);
+
+      const domainsResponse = await fetch(`/api/domains?${params}`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      const domainsData = await domainsResponse.json();
+      if (domainsData.success) {
+        setDomains(domainsData.data);
+      }
+
+      alert(t('message.importSuccess').replace('{count}', importedDomains.length.toString()));
+    } catch (error) {
+      console.error('Import error:', error);
+      alert(t('message.importFailed'));
+    }
+  };
+
   const handleSubmitDomain = async (data: Partial<Domain>) => {
+    console.log('📝 Submitting domain:', data);
+    
     try {
       const url = editingDomain
         ? `/api/domains/${editingDomain.id}`
@@ -114,33 +165,40 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
       });
 
       const result = await response.json();
+      console.log('✅ Submit result:', result);
 
       if (result.success) {
-        // 立即关闭弹窗
+        console.log('🚪 Closing modal and refreshing...');
+        
+        // 立即关闭弹窗和清理状态
         setIsFormOpen(false);
         setEditingDomain(null);
+        setOpenMenuId(null); // 同时关闭任何打开的菜单
 
-        // 刷新域名列表
-        const params = new URLSearchParams();
-        if (searchQuery) params.append('search', searchQuery);
-        if (registrarFilter) params.append('registrar', registrarFilter);
-        if (filingStatusFilter) params.append('filingStatus', filingStatusFilter);
-        params.append('sort', sortBy);
+        // 延迟一下再刷新，确保状态更新完成
+        setTimeout(async () => {
+          const params = new URLSearchParams();
+          if (searchQuery) params.append('search', searchQuery);
+          if (registrarFilter) params.append('registrar', registrarFilter);
+          if (filingStatusFilter) params.append('filingStatus', filingStatusFilter);
+          params.append('sort', sortBy);
 
-        const domainsResponse = await fetch(`/api/domains?${params}`, {
-          headers: { Authorization: `Bearer ${authToken}` },
-        });
-        const domainsData = await domainsResponse.json();
-        if (domainsData.success) {
-          setDomains(domainsData.data);
-        }
+          const domainsResponse = await fetch(`/api/domains?${params}`, {
+            headers: { Authorization: `Bearer ${authToken}` },
+          });
+          const domainsData = await domainsResponse.json();
+          if (domainsData.success) {
+            setDomains(domainsData.data);
+          }
+        }, 100);
+        
       } else {
-        console.error('Submit failed:', result.error);
-        // 显示错误信息但不关闭弹窗
+        console.error('❌ Submit failed:', result.error);
+        alert(result.error || t('message.operationFailed'));
       }
     } catch (error) {
-      console.error('Failed to submit domain:', error);
-      // 网络错误时也不关闭弹窗
+      console.error('❌ Network error:', error);
+      alert(t('message.networkError'));
     }
   };
 
@@ -164,13 +222,19 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
     }
   };
 
-  if (loading) {
+  // 只在真正需要时显示加载状态，避免初始闪烁
+  if (loading && domains.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-slate-600">{t('common.loading')}</p>
-        </div>
+      <div className="min-h-screen bg-slate-50">
+        <Header locale={locale} onLogout={handleLogout} />
+        <main className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center py-16">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+              <p className="mt-4 text-slate-600">{t('common.loading')}</p>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
@@ -204,6 +268,13 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
                 domains={domains}
               />
             </div>
+
+            {/* 导入导出按钮 */}
+            <ImportExportPanel
+              domains={domains}
+              onImport={handleImportDomains}
+              locale={locale}
+            />
 
             {/* 添加按钮 */}
             <Button variant="primary" onClick={handleAddDomain} size="md">
