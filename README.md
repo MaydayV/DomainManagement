@@ -19,6 +19,24 @@
 
 **[🇨🇳 中文](#chinese)** | **[🇺🇸 English](#english)** | **[📚 文档](./docs/)** | **[🚀 快速开始](#快速开始)**
 
+---
+
+### 📸 项目预览 | Preview
+
+![项目主界面](./public/Listpage.png)
+
+<details>
+<summary>🖼️ 查看更多截图 | View More Screenshots</summary>
+
+**主要功能界面：**
+- ✅ 智能统计面板 - 实时数据分析
+- ✅ 域名卡片列表 - 清晰信息展示  
+- ✅ 搜索筛选排序 - 高效管理工具
+- ✅ WHOIS 自动填充 - 智能添加域名
+- ✅ CSV 批量管理 - 导入导出功能
+
+</details>
+
 </div>
 
 ---
