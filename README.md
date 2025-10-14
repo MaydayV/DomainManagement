@@ -689,7 +689,6 @@ MIT License - see [LICENSE](LICENSE)
 
 - 🐛 **Bug Reports**: [Issues](https://github.com/MaydayV/DomainManagement/issues)
 - 💬 **Discussions**: [Discussions](https://github.com/MaydayV/DomainManagement/discussions)
-- 📧 **Email**: support@example.com
 
 ---
 
