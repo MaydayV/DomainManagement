@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromHeader, validateSession } from '@/lib/auth';
 
-// WHOIS 查询 API - 使用本地库实现
+// WHOIS 查询 API - 使用 apihz.cn 格式化接口实现
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
   const session = getSessionFromHeader(authHeader);
@@ -48,8 +48,34 @@ export async function GET(request: NextRequest) {
     console.log(`🔍 Querying WHOIS for: ${domain}`);
     const startTime = Date.now();
 
-    // 使用 next-whois API（更稳定，支持 RDAP）
-    const whoisResponse = await fetch(`https://who.zmh.me/api/lookup?query=${domain}`, {
+    // 使用 apihz.cn WHOIS API（支持顶级域名格式化查询）
+    const apiId = process.env.WHOIS_API_ID;
+    const apiKey = process.env.WHOIS_API_KEY;
+    
+    if (!apiId || !apiKey) {
+      throw new Error('WHOIS API credentials not configured. Please set WHOIS_API_ID and WHOIS_API_KEY environment variables.');
+    }
+    
+    // 先尝试获取最优接口地址
+    let apiEndpoint = 'https://cn.apihz.cn/api/wangzhan/whois.php';
+    
+    try {
+      const optimalResponse = await fetch('https://api.apihz.cn/getapi.php', {
+        signal: AbortSignal.timeout(3000),
+      });
+      if (optimalResponse.ok) {
+        const optimalUrl = await optimalResponse.text();
+        if (optimalUrl && optimalUrl.startsWith('http')) {
+          apiEndpoint = optimalUrl.trim();
+          console.log(`📡 Using optimal endpoint: ${apiEndpoint}`);
+        }
+      }
+    } catch (err) {
+      console.log('⚠️ Could not fetch optimal endpoint, using default domain endpoint');
+    }
+
+    const whoisUrl = `${apiEndpoint}?id=${apiId}&key=${apiKey}&domain=${domain}`;
+    const whoisResponse = await fetch(whoisUrl, {
       headers: {
         'User-Agent': 'DomainManagement/1.0',
         'Accept': 'application/json',
@@ -64,25 +90,38 @@ export async function GET(request: NextRequest) {
     const whoisData = await whoisResponse.json();
     const queryTime = (Date.now() - startTime) / 1000;
     
-    if (!whoisData.status) {
-      throw new Error(whoisData.error || 'WHOIS lookup failed');
+    // 检查API返回状态
+    if (whoisData.code !== 200) {
+      throw new Error(whoisData.msg || 'WHOIS lookup failed');
     }
 
-    console.log(`✅ WHOIS query completed in ${queryTime}s using ${whoisData.source || 'whois'}`);
+    console.log(`✅ WHOIS query completed in ${queryTime}s using apihz.cn`);
 
-    // 解析数据
-    const result = whoisData.result;
-    const registrarId = mapRegistrarToId(result.registrar || '');
+    // 解析API返回的数据
+    const registrarId = mapRegistrarToId(whoisData.zcname || '');
+    
+    // 收集所有非空的 nameservers
+    const nameServers = [];
+    for (let i = 1; i <= 7; i++) {
+      const ns = whoisData[`ns${i}`];
+      if (ns) {
+        nameServers.push(ns.toLowerCase());
+      }
+    }
     
     const responseData = {
-      domain: result.domain || domain.toUpperCase(),
+      domain: whoisData.domain || domain.toUpperCase(),
       registrar: registrarId,
-      registrationDate: result.creationDate || result.created || null,
-      expiryDate: result.expirationDate || result.expires || null,
-      registrarName: result.registrar || '',
-      nameServers: result.nameServers || [],
+      registrationDate: whoisData.addtime || null,
+      expiryDate: whoisData.endtime || null,
+      registrarName: whoisData.zcname || '',
+      nameServers: nameServers,
       queryTime,
-      source: whoisData.source || 'whois',
+      source: 'apihz.cn',
+      // 额外信息
+      handle: whoisData.handle,
+      status: whoisData.status,
+      dnssec: whoisData.dnssec,
     };
 
     // 缓存结果
@@ -112,10 +151,17 @@ export async function GET(request: NextRequest) {
     let errorMessage = 'WHOIS query failed';
     if (error.message?.includes('timeout')) {
       errorMessage = 'WHOIS query timeout, please try again';
-    } else if (error.message?.includes('No whois server') || error.message?.includes('not found')) {
+    } else if (error.message?.includes('通讯秘钥错误')) {
+      errorMessage = 'API authentication failed';
+    } else if (error.message?.includes('暂不支持该域名后缀')) {
+      errorMessage = 'Domain suffix not supported (only top-level domains are supported)';
+    } else if (error.message?.includes('not found') || error.message?.includes('域名不存在')) {
       errorMessage = 'Domain not found or not registered';
-    } else if (error.message?.includes('rate limit')) {
+    } else if (error.message?.includes('rate limit') || error.message?.includes('频次')) {
       errorMessage = 'Rate limit exceeded, please wait a moment';
+    } else if (error.message) {
+      // 如果有具体的错误消息，直接使用
+      errorMessage = error.message;
     }
 
     return NextResponse.json(
@@ -229,6 +275,7 @@ function mapRegistrarToId(registrarName: string): string {
     // 腾讯云相关  
     'tencent': 'tencent',
     'dnspod': 'tencent',
+    'dnspod, inc': 'tencent',
     '腾讯': 'tencent',
     
     // 华为云

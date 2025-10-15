@@ -172,7 +172,11 @@ cd DomainManagement
 npm install
 
 # 3️⃣ 配置环境变量
-echo "ACCESS_PASSWORD=your_password" > .env.local
+cp env.example .env.local
+# 编辑 .env.local，填写必要的配置：
+# - ACCESS_PASSWORD: 应用访问密码
+# - WHOIS_API_ID: WHOIS API 开发者ID
+# - WHOIS_API_KEY: WHOIS API 密钥
 
 # 4️⃣ 启动应用
 npm run dev
@@ -458,10 +462,14 @@ git push origin main
    - 选择 Upstash → Redis
    - 创建并连接到项目
 
-4. **设置环境变量**
+4. **设置环境变量** ⚠️ 重要
    - Settings → Environment Variables
-   - 添加 `ACCESS_PASSWORD = 你的密码`
-   - 选择所有环境
+   - 添加以下变量（选择所有环境）：
+     - `ACCESS_PASSWORD` = 你的登录密码
+     - `WHOIS_API_ID` = 你的 WHOIS API ID
+     - `WHOIS_API_KEY` = 你的 WHOIS API 密钥
+   
+   > 💡 WHOIS API 获取：访问 [apihz.cn](https://apihz.cn/) 注册并获取凭证
 
 5. **重新部署**
    - Deployments → Redeploy
@@ -656,7 +664,11 @@ cd DomainManagement
 npm install
 
 # 3️⃣ Configure
-echo "ACCESS_PASSWORD=your_password" > .env.local
+cp env.example .env.local
+# Edit .env.local and fill in:
+# - ACCESS_PASSWORD: Your password
+# - WHOIS_API_ID: WHOIS API ID
+# - WHOIS_API_KEY: WHOIS API Key
 
 # 4️⃣ Start
 npm run dev
