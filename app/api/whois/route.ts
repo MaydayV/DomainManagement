@@ -4,9 +4,16 @@ import { getSessionFromHeader, validateSession } from '@/lib/auth';
 // WHOIS 查询 API - 使用 apihz.cn whoisall 接口实现（支持全球1000+域名后缀）
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
+  console.log('🔐 Auth header received:', authHeader ? `Bearer ${authHeader.substring(0, 20)}...` : 'None');
+  
   const session = getSessionFromHeader(authHeader);
+  console.log('🔐 Session parsed:', session ? { authenticated: session.authenticated, expiresAt: session.expiresAt ? new Date(session.expiresAt).toISOString() : 'N/A' } : 'None');
+  
+  const isValid = validateSession(session);
+  console.log('🔐 Session valid:', isValid);
 
-  if (!validateSession(session)) {
+  if (!isValid) {
+    console.log('❌ Unauthorized: Invalid or expired session');
     return NextResponse.json(
       { success: false, error: 'Unauthorized' },
       { status: 401 }
@@ -48,7 +55,7 @@ export async function GET(request: NextRequest) {
     console.log(`🔍 Querying WHOIS for: ${domain}`);
     const startTime = Date.now();
 
-    // 使用 apihz.cn WHOIS API（支持全球1000+域名后缀查询）
+    // 使用 apihz.cn WHOIS API（支持全球1000+域名后缀查询）image.png
     const apiId = process.env.WHOIS_API_ID;
     const apiKey = process.env.WHOIS_API_KEY;
     
@@ -96,7 +103,37 @@ export async function GET(request: NextRequest) {
       throw new Error(`WHOIS API returned ${whoisResponse.status}: ${whoisResponse.statusText}`);
     }
 
-    const whoisData = await whoisResponse.json();
+    // 先获取文本，然后手动解析 JSON（API 返回的 JSON 包含未转义的控制字符）
+    const responseText = await whoisResponse.text();
+    console.log('📥 Raw response length:', responseText.length);
+    
+    let whoisData;
+    try {
+      // 修复 API 返回的格式问题：将 JSON 字符串中的实际控制字符转义
+      // API 返回的 "whois" 字段包含未转义的 \r\n 等控制字符
+      // 使用更强大的正则来匹配整个 whois 字段（包括跨行内容）
+      const fixedText = responseText.replace(
+        /"whois":\s*"([\s\S]*?)"\s*\}/,
+        (match, content) => {
+          // 转义JSON字符串中的特殊字符（注意顺序：先转义反斜杠）
+          const escaped = content
+            .replace(/\\/g, '\\\\')   // 先转义反斜杠（避免后续替换被影响）
+            .replace(/"/g, '\\"')     // 转义双引号
+            .replace(/\r/g, '\\r')    // 转义回车
+            .replace(/\n/g, '\\n')    // 转义换行
+            .replace(/\t/g, '\\t');   // 转义制表符
+          return `"whois": "${escaped}"\n}`;
+        }
+      );
+      
+      whoisData = JSON.parse(fixedText);
+      console.log('✅ Successfully parsed WHOIS response');
+    } catch (parseError: any) {
+      console.error('❌ JSON parse error:', parseError.message);
+      console.error('Response sample:', responseText.substring(0, 500));
+      throw new Error(`Failed to parse WHOIS response: ${parseError.message}`);
+    }
+    
     const queryTime = (Date.now() - startTime) / 1000;
     
     // 检查API返回状态

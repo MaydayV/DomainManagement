@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth Token Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .result {
+            background: #f0f0f0;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        pre { background: #272822; color: #f8f8f2; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔐 Auth Token 测试工具</h1>
+    
+    <div id="tokenInfo" class="result"></div>
+    
+    <button onclick="checkToken()">检查 Token</button>
+    <button onclick="testWhois()">测试 WHOIS API</button>
+    <button onclick="refreshToken()">刷新 Token</button>
+    <button onclick="clearToken()">清除 Token</button>
+    
+    <div id="result"></div>
+
+    <script>
+        function showResult(html, type = 'info') {
+            document.getElementById('result').innerHTML = `<div class="result ${type}">${html}</div>`;
+        }
+
+        function checkToken() {
+            const token = localStorage.getItem('auth_token');
+            const tokenInfo = document.getElementById('tokenInfo');
+            
+            if (!token) {
+                tokenInfo.innerHTML = '<div class="error">❌ 未找到 Token，请先登录</div>';
+                return;
+            }
+            
+            try {
+                const decoded = JSON.parse(atob(token));
+                const expiresAt = new Date(decoded.expiresAt);
+                const now = new Date();
+                const isExpired = expiresAt < now;
+                
+                tokenInfo.innerHTML = `
+                    <div class="${isExpired ? 'error' : 'success'}">
+                        <h3>✅ Token 信息</h3>
+                        <p><strong>认证状态:</strong> ${decoded.authenticated ? '已认证' : '未认证'}</p>
+                        <p><strong>过期时间:</strong> ${expiresAt.toLocaleString()}</p>
+                        <p><strong>当前时间:</strong> ${now.toLocaleString()}</p>
+                        <p><strong>状态:</strong> ${isExpired ? '❌ 已过期' : '✅ 有效'}</p>
+                        <details>
+                            <summary>原始 Token</summary>
+                            <pre>${token}</pre>
+                        </details>
+                    </div>
+                `;
+            } catch (e) {
+                tokenInfo.innerHTML = `<div class="error">❌ Token 解析失败: ${e.message}</div>`;
+            }
+        }
+
+        async function testWhois() {
+            const token = localStorage.getItem('auth_token');
+            
+            if (!token) {
+                showResult('❌ 未找到 Token，请先登录', 'error');
+                return;
+            }
+            
+            showResult('🔄 正在测试 WHOIS API...', 'info');
+            
+            try {
+                const response = await fetch('/api/whois?domain=apple.com', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult(`
+                        <h3>✅ WHOIS API 调用成功</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, 'success');
+                } else {
+                    showResult(`
+                        <h3>❌ WHOIS API 调用失败</h3>
+                        <p><strong>状态码:</strong> ${response.status}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, 'error');
+                }
+            } catch (e) {
+                showResult(`❌ 请求失败: ${e.message}`, 'error');
+            }
+        }
+
+        async function refreshToken() {
+            const password = prompt('请输入密码:');
+            if (!password) return;
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    localStorage.setItem('auth_token', data.data.token);
+                    showResult('✅ Token 刷新成功！', 'success');
+                    checkToken();
+                } else {
+                    showResult('❌ 密码错误', 'error');
+                }
+            } catch (e) {
+                showResult(`❌ 刷新失败: ${e.message}`, 'error');
+            }
+        }
+
+        function clearToken() {
+            localStorage.removeItem('auth_token');
+            showResult('✅ Token 已清除', 'success');
+            document.getElementById('tokenInfo').innerHTML = '';
+        }
+
+        // 页面加载时自动检查
+        window.onload = checkToken;
+    </script>
+</body>
+</html>
+
