@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { Calendar, ExternalLink, Settings, Edit, Trash2, Clock } from 'lucide-react';
+import { Calendar, ExternalLink, Settings, Edit, Trash2, Clock, Info } from 'lucide-react';
 import { Domain } from '@/types';
 import { getDaysUntilExpiry, getExpiryStatus, cn } from '@/lib/utils';
 import { formatPrice } from '@/lib/currencies';
@@ -96,6 +96,19 @@ export function DomainCard({ domain, onEdit, onDelete, locale, isMenuOpen, onMen
           >
             {domain.name}
           </h3>
+          
+          {/* 备注图标 - 鼠标悬停显示 */}
+          {domain.notes && (
+            <div className="relative group flex-shrink-0">
+              <Info className="w-4 h-4 text-blue-500 cursor-help" />
+              {/* 悬浮提示框 */}
+              <div className="absolute left-0 top-6 w-64 p-3 bg-slate-800 text-white text-xs rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
+                <div className="absolute -top-1 left-4 w-2 h-2 bg-slate-800 transform rotate-45"></div>
+                <p className="leading-relaxed break-words">{domain.notes}</p>
+              </div>
+            </div>
+          )}
+          
           {domain.filingStatus && (
             <span className={cn(
               'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium flex-shrink-0',
@@ -232,12 +245,6 @@ export function DomainCard({ domain, onEdit, onDelete, locale, isMenuOpen, onMen
         </div>
       </div>
 
-      {/* 备注 */}
-      {domain.notes && (
-        <div className="mt-3 pt-3 border-t border-slate-100">
-          <p className="text-xs text-slate-600 line-clamp-2">{domain.notes}</p>
-        </div>
-      )}
     </div>
   );
 }
