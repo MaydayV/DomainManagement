@@ -52,6 +52,13 @@ export async function GET(request: NextRequest) {
     const apiId = process.env.WHOIS_API_ID;
     const apiKey = process.env.WHOIS_API_KEY;
     
+    console.log('🔑 API Credentials check:', { 
+      hasApiId: !!apiId, 
+      hasApiKey: !!apiKey,
+      apiIdLength: apiId?.length,
+      apiKeyLength: apiKey?.length 
+    });
+    
     if (!apiId || !apiKey) {
       throw new Error('WHOIS API credentials not configured. Please set WHOIS_API_ID and WHOIS_API_KEY environment variables.');
     }
@@ -101,7 +108,10 @@ export async function GET(request: NextRequest) {
 
     // 解析原始 WHOIS 文本数据
     const whoisText = whoisData.whois || '';
+    console.log('📄 WHOIS text length:', whoisText.length);
+    
     const parsedData = parseWhoisText(whoisText);
+    console.log('🔍 Parsed data:', JSON.stringify(parsedData, null, 2));
     
     const registrarId = mapRegistrarToId(parsedData.registrar || '');
     
@@ -115,6 +125,8 @@ export async function GET(request: NextRequest) {
       queryTime,
       source: 'apihz.cn-whoisall',
     };
+    
+    console.log('📊 Response data:', JSON.stringify(responseData, null, 2));
 
     // 缓存结果
     if (!globalThis.whoisCache) globalThis.whoisCache = {};
@@ -166,7 +178,8 @@ export async function GET(request: NextRequest) {
 
 // 解析 WHOIS 原始文本（支持全球多种格式）
 function parseWhoisText(whoisText: string) {
-  const lines = whoisText.split('\n');
+  // 处理不同的换行符格式 (\r\n, \n, \r)
+  const lines = whoisText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
   const data: any = {};
 
   // 提取关键信息的正则表达式（扩展支持更多格式）
