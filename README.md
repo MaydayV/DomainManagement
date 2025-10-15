@@ -469,7 +469,7 @@ git push origin main
      - `WHOIS_API_ID` = 你的 WHOIS API ID
      - `WHOIS_API_KEY` = 你的 WHOIS API 密钥
    
-   > 💡 WHOIS API 获取：访问 [apihz.cn](https://apihz.cn/) 注册并获取凭证  
+   > 💡 WHOIS API 获取：访问 [apihz.cn](https://www.apihz.cn/?shareid=10008890) 注册并获取凭证  
    > 📖 接口文档：[全球域名WHOIS查询](https://apihz.cn/api/wangzhanwhoisall.html) - 支持1000+域名后缀
 
 5. **重新部署**

@@ -68,7 +68,7 @@ export function DomainCard({ domain, onEdit, onDelete, locale, isMenuOpen, onMen
   return (
     <div 
       className={cn(
-        'relative bg-white rounded-xl border transition-all hover:shadow-2xl hover:-translate-y-1 group p-5',
+        'relative bg-white rounded-xl border transition-all hover:shadow-2xl hover:-translate-y-1 p-5',
         isExpired ? 'border-slate-300 bg-slate-50 opacity-60' : 'border-slate-200',
         isExpiringSoon && !isExpired && 'border-yellow-300 bg-yellow-50/30 shadow-sm',
         isMenuOpen && 'z-[50]' // 打开菜单时提升卡片层级
