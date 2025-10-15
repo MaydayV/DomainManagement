@@ -66,7 +66,7 @@
 ### 🤖 **WHOIS 智能填充**
 - 🔍 一键查询域名信息
 - ⚡ 3秒自动填充全部字段
-- 🌐 支持 RDAP + WHOIS 双协议
+- 🌐 支持全球1000+域名后缀
 - 📊 95%+ 查询成功率
 - 💾 智能缓存避免重复查询
 
@@ -469,7 +469,8 @@ git push origin main
      - `WHOIS_API_ID` = 你的 WHOIS API ID
      - `WHOIS_API_KEY` = 你的 WHOIS API 密钥
    
-   > 💡 WHOIS API 获取：访问 [apihz.cn](https://apihz.cn/) 注册并获取凭证
+   > 💡 WHOIS API 获取：访问 [apihz.cn](https://apihz.cn/) 注册并获取凭证  
+   > 📖 接口文档：[全球域名WHOIS查询](https://apihz.cn/api/wangzhanwhoisall.html) - 支持1000+域名后缀
 
 5. **重新部署**
    - Deployments → Redeploy
@@ -530,9 +531,9 @@ git push origin main
 <summary><b>Q: WHOIS 查询准确吗？</b></summary>
 
 **A**: 非常准确！
-- ✅ 使用成熟的 WHOIS/RDAP 协议
-- ✅ 95%+ 常见域名查询成功率
-- ✅ 支持 .com/.net/.org/.cn 等主流 TLD
+- ✅ 使用 apihz.cn 全球域名 WHOIS API
+- ✅ 95%+ 域名查询成功率
+- ✅ 支持全球1000+域名后缀（.com/.net/.org/.cn/.io/.dev/.ai 等）
 - ✅ 查询结果可以手动修改
 
 </details>
@@ -623,7 +624,7 @@ MIT License © 2025 [MaydayV](https://github.com/MaydayV)
 ### 🤖 **Intelligent WHOIS Auto-Fill**
 - 🔍 One-click domain info query
 - ⚡ Auto-fill in 3 seconds
-- 🌐 RDAP + WHOIS dual protocols
+- 🌐 Support 1000+ domain suffixes globally
 - 📊 95%+ success rate
 - 💾 Smart caching
 

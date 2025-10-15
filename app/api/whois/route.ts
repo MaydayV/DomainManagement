@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromHeader, validateSession } from '@/lib/auth';
 
-// WHOIS 查询 API - 使用 apihz.cn 格式化接口实现
+// WHOIS 查询 API - 使用 apihz.cn whoisall 接口实现（支持全球1000+域名后缀）
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
   const session = getSessionFromHeader(authHeader);
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     console.log(`🔍 Querying WHOIS for: ${domain}`);
     const startTime = Date.now();
 
-    // 使用 apihz.cn WHOIS API（支持顶级域名格式化查询）
+    // 使用 apihz.cn WHOIS API（支持全球1000+域名后缀查询）
     const apiId = process.env.WHOIS_API_ID;
     const apiKey = process.env.WHOIS_API_KEY;
     
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     }
     
     // 先尝试获取最优接口地址
-    let apiEndpoint = 'https://cn.apihz.cn/api/wangzhan/whois.php';
+    let apiEndpoint = 'https://cn.apihz.cn/api/wangzhan/whoisall.php';
     
     try {
       const optimalResponse = await fetch('https://api.apihz.cn/getapi.php', {
@@ -66,7 +66,8 @@ export async function GET(request: NextRequest) {
       if (optimalResponse.ok) {
         const optimalUrl = await optimalResponse.text();
         if (optimalUrl && optimalUrl.startsWith('http')) {
-          apiEndpoint = optimalUrl.trim();
+          // 替换接口路径为 whoisall.php
+          apiEndpoint = optimalUrl.trim().replace('/whois.php', '/whoisall.php');
           console.log(`📡 Using optimal endpoint: ${apiEndpoint}`);
         }
       }
@@ -74,7 +75,8 @@ export async function GET(request: NextRequest) {
       console.log('⚠️ Could not fetch optimal endpoint, using default domain endpoint');
     }
 
-    const whoisUrl = `${apiEndpoint}?id=${apiId}&key=${apiKey}&domain=${domain}`;
+    // type=1 表示优先使用缓存，type=2 直接查询官方
+    const whoisUrl = `${apiEndpoint}?id=${apiId}&key=${apiKey}&domain=${domain}&type=1`;
     const whoisResponse = await fetch(whoisUrl, {
       headers: {
         'User-Agent': 'DomainManagement/1.0',
@@ -95,33 +97,23 @@ export async function GET(request: NextRequest) {
       throw new Error(whoisData.msg || 'WHOIS lookup failed');
     }
 
-    console.log(`✅ WHOIS query completed in ${queryTime}s using apihz.cn`);
+    console.log(`✅ WHOIS query completed in ${queryTime}s using apihz.cn (whoisall)`);
 
-    // 解析API返回的数据
-    const registrarId = mapRegistrarToId(whoisData.zcname || '');
+    // 解析原始 WHOIS 文本数据
+    const whoisText = whoisData.whois || '';
+    const parsedData = parseWhoisText(whoisText);
     
-    // 收集所有非空的 nameservers
-    const nameServers = [];
-    for (let i = 1; i <= 7; i++) {
-      const ns = whoisData[`ns${i}`];
-      if (ns) {
-        nameServers.push(ns.toLowerCase());
-      }
-    }
+    const registrarId = mapRegistrarToId(parsedData.registrar || '');
     
     const responseData = {
-      domain: whoisData.domain || domain.toUpperCase(),
+      domain: parsedData.domain || domain.toUpperCase(),
       registrar: registrarId,
-      registrationDate: whoisData.addtime || null,
-      expiryDate: whoisData.endtime || null,
-      registrarName: whoisData.zcname || '',
-      nameServers: nameServers,
+      registrationDate: parsedData.creationDate || null,
+      expiryDate: parsedData.expirationDate || null,
+      registrarName: parsedData.registrar || '',
+      nameServers: parsedData.nameServers || [],
       queryTime,
-      source: 'apihz.cn',
-      // 额外信息
-      handle: whoisData.handle,
-      status: whoisData.status,
-      dnssec: whoisData.dnssec,
+      source: 'apihz.cn-whoisall',
     };
 
     // 缓存结果
@@ -172,32 +164,41 @@ export async function GET(request: NextRequest) {
 }
 
 
-// 解析 WHOIS 原始文本
+// 解析 WHOIS 原始文本（支持全球多种格式）
 function parseWhoisText(whoisText: string) {
   const lines = whoisText.split('\n');
   const data: any = {};
 
-  // 提取关键信息的正则表达式
+  // 提取关键信息的正则表达式（扩展支持更多格式）
   const patterns = {
+    domain: [
+      /Domain Name:\s*(.+)/i,
+      /域名:\s*(.+)/i,
+    ],
     registrar: [
       /Registrar:\s*(.+)/i,
       /Sponsoring Registrar:\s*(.+)/i,
       /Registrar Name:\s*(.+)/i,
       /注册商:\s*(.+)/i,
+      /注册局:\s*(.+)/i,
     ],
     creationDate: [
       /Creation Date:\s*(.+)/i,
       /Created On:\s*(.+)/i,
       /Created:\s*(.+)/i,
       /Registration Time:\s*(.+)/i,
+      /Registration Date:\s*(.+)/i,
       /注册时间:\s*(.+)/i,
       /创建时间:\s*(.+)/i,
     ],
     expirationDate: [
       /Registry Expiry Date:\s*(.+)/i,
+      /Registrar Registration Expiration Date:\s*(.+)/i,
       /Expiration Date:\s*(.+)/i,
+      /Expiration Time:\s*(.+)/i,
       /Expires On:\s*(.+)/i,
       /Expiry Date:\s*(.+)/i,
+      /Expire Date:\s*(.+)/i,
       /过期时间:\s*(.+)/i,
       /到期时间:\s*(.+)/i,
     ],
@@ -205,13 +206,23 @@ function parseWhoisText(whoisText: string) {
       /Name Server:\s*(.+)/i,
       /nserver:\s*(.+)/i,
       /DNS:\s*(.+)/i,
+      /Nameserver:\s*(.+)/i,
     ],
   };
 
   // 解析每一行
   for (const line of lines) {
     const trimmedLine = line.trim();
-    if (!trimmedLine) continue;
+    if (!trimmedLine || trimmedLine.startsWith('%') || trimmedLine.startsWith('#')) continue;
+
+    // 域名
+    for (const pattern of patterns.domain) {
+      const match = trimmedLine.match(pattern);
+      if (match && !data.domain) {
+        data.domain = match[1].trim().toUpperCase();
+        break;
+      }
+    }
 
     // 注册商
     for (const pattern of patterns.registrar) {
@@ -253,7 +264,11 @@ function parseWhoisText(whoisText: string) {
       const match = trimmedLine.match(pattern);
       if (match) {
         if (!data.nameServers) data.nameServers = [];
-        data.nameServers.push(match[1].trim().toLowerCase());
+        const ns = match[1].trim().toLowerCase();
+        // 去重
+        if (!data.nameServers.includes(ns)) {
+          data.nameServers.push(ns);
+        }
       }
     }
   }
