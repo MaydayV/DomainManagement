@@ -23,7 +23,14 @@
     "password": "Password",
     "enterPassword": "Enter access password",
     "incorrectPassword": "Incorrect password",
-    "loginRequired": "Please login first"
+    "loginRequired": "Please login first",
+    "welcomeBack": "Welcome back",
+    "tagline": "Keep every domain in one place, with expiry dates you can actually see.",
+    "eyebrow": "Domain ledger",
+    "panelTitle": "A calm ledger for your domains",
+    "featureExpiry": "Expiry warnings and status at a glance",
+    "featureWhois": "WHOIS lookup that fills in the essentials",
+    "featureExport": "CSV import and export for bulk updates"
   },
   "domain": {
     "domain": "Domain",

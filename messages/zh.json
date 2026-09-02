@@ -23,7 +23,14 @@
     "password": "密码",
     "enterPassword": "请输入访问密码",
     "incorrectPassword": "密码错误",
-    "loginRequired": "请先登录"
+    "loginRequired": "请先登录",
+    "welcomeBack": "欢迎回来",
+    "tagline": "集中管理域名资产，到期一目了然。",
+    "eyebrow": "域名台账",
+    "panelTitle": "专业的域名资产台账",
+    "featureExpiry": "到期预警与状态一目了然",
+    "featureWhois": "WHOIS 查询，自动填充关键信息",
+    "featureExport": "CSV 导入导出，批量维护更轻松"
   },
   "domain": {
     "domain": "域名",
