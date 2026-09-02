@@ -10,6 +10,7 @@ import { DateInput } from './ui/DateInput';
 import { DEFAULT_REGISTRARS } from '@/lib/registrars';
 import { CURRENCIES } from '@/lib/currencies';
 import { isValidDomain, cn } from '@/lib/utils';
+import { dateOnlyPart, dateOnlyToISO } from '@/lib/dates';
 
 interface DomainFormProps {
   domain?: Domain | null;
@@ -50,8 +51,8 @@ export function DomainForm({ domain, onSubmit, onCancel, locale, isSubmitting = 
       setFormData({
         name: domain.name,
         registrar: registrarValue,
-        expiryDate: domain.expiryDate.split('T')[0],
-        registrationDate: domain.registrationDate?.split('T')[0] || '',
+        expiryDate: dateOnlyPart(domain.expiryDate),
+        registrationDate: domain.registrationDate ? dateOnlyPart(domain.registrationDate) : '',
         price: domain.price.toString(),
         currency: domain.currency,
         filingStatus: domain.filingStatus,
@@ -116,8 +117,8 @@ export function DomainForm({ domain, onSubmit, onCancel, locale, isSubmitting = 
       const submitData: Partial<Domain> = {
         name: formData.name.trim(),
         registrar: registrarValue,
-        expiryDate: new Date(formData.expiryDate).toISOString(),
-        registrationDate: formData.registrationDate ? new Date(formData.registrationDate).toISOString() : undefined,
+        expiryDate: dateOnlyToISO(formData.expiryDate),
+        registrationDate: formData.registrationDate ? dateOnlyToISO(formData.registrationDate) : undefined,
         price: Number(formData.price) || 0,
         currency: formData.currency,
         filingStatus: formData.filingStatus,
@@ -193,25 +194,19 @@ export function DomainForm({ domain, onSubmit, onCancel, locale, isSubmitting = 
 
         // 设置注册时间
         if (data.registrationDate) {
-          updates.registrationDate = new Date(data.registrationDate).toISOString().split('T')[0];
+          updates.registrationDate = dateOnlyPart(data.registrationDate);
         }
 
-        // 设置到期时间
         if (data.expiryDate) {
-          updates.expiryDate = new Date(data.expiryDate).toISOString().split('T')[0];
+          updates.expiryDate = dateOnlyPart(data.expiryDate);
         }
 
-        // 更新表单数据
         setFormData(prev => ({ ...prev, ...updates }));
-
-        console.log('✅ WHOIS data auto-filled:', data);
       } else {
-        console.error('WHOIS lookup failed:', result.error);
-        alert(t('message.whoisFailed') || 'WHOIS 查询失败');
+        setWhoisData({ error: result.error || t('message.whoisFailed') });
       }
-    } catch (error) {
-      console.error('WHOIS error:', error);
-      alert(t('message.networkError'));
+    } catch {
+      setWhoisData({ error: t('message.networkError') });
     } finally {
       setWhoisLoading(false);
     }
@@ -261,10 +256,15 @@ export function DomainForm({ domain, onSubmit, onCancel, locale, isSubmitting = 
               <p className="text-blue-700 font-medium">🔍 {t('domain.whoisQuerying')}</p>
             </div>
           )}
-          {whoisData && (
+          {whoisData?.error && (
+            <div className="mt-2 p-2 bg-red-50 rounded-md border border-red-200">
+              <p className="text-red-700 font-medium">{whoisData.error}</p>
+            </div>
+          )}
+          {whoisData && !whoisData.error && (
             <div className="mt-2 p-2 bg-green-50 rounded-md border border-green-200">
               <p className="text-green-700 font-medium flex items-center gap-1">
-                ✅ {t('domain.whoisSuccess')}
+                {t('domain.whoisSuccess')}
                 <span className="text-xs bg-green-200 text-green-800 px-1 rounded">
                   {whoisData.source || 'whois'}
                 </span>
@@ -274,17 +274,17 @@ export function DomainForm({ domain, onSubmit, onCancel, locale, isSubmitting = 
               </p>
               {whoisData.registrationDate && (
                 <p className="text-green-600 text-xs">
-                  {t('domain.registrationDate')}: {new Date(whoisData.registrationDate).toLocaleDateString(locale)}
+                  {t('domain.registrationDate')}: {dateOnlyPart(whoisData.registrationDate)}
                 </p>
               )}
               {whoisData.expiryDate && (
                 <p className="text-green-600 text-xs">
-                  {t('domain.expiryDate')}: {new Date(whoisData.expiryDate).toLocaleDateString(locale)}
+                  {t('domain.expiryDate')}: {dateOnlyPart(whoisData.expiryDate)}
                 </p>
               )}
               {whoisData.queryTime && (
                 <p className="text-green-500 text-xs">
-                  查询耗时: {whoisData.queryTime}s
+                  {t('domain.whoisQueryTime').replace('{time}', String(whoisData.queryTime))}
                 </p>
               )}
             </div>
@@ -329,8 +329,8 @@ export function DomainForm({ domain, onSubmit, onCancel, locale, isSubmitting = 
       <div className="grid grid-cols-2 gap-4">
         <DateInput
           label={t('domain.registrationDate')}
-          value={formData.registrationDate ? new Date(formData.registrationDate).toISOString() : ''}
-          onChange={(value) => setFormData({ ...formData, registrationDate: value.split('T')[0] })}
+          value={formData.registrationDate}
+          onChange={(value) => setFormData({ ...formData, registrationDate: dateOnlyPart(value) })}
           error={errors.registrationDate}
           required
           locale={locale}
@@ -338,8 +338,8 @@ export function DomainForm({ domain, onSubmit, onCancel, locale, isSubmitting = 
 
         <DateInput
           label={t('domain.expiryDate')}
-          value={formData.expiryDate ? new Date(formData.expiryDate).toISOString() : ''}
-          onChange={(value) => setFormData({ ...formData, expiryDate: value.split('T')[0] })}
+          value={formData.expiryDate}
+          onChange={(value) => setFormData({ ...formData, expiryDate: dateOnlyPart(value) })}
           error={errors.expiryDate}
           required
           locale={locale}

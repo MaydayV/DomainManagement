@@ -20,10 +20,19 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
       document.body.style.overflow = 'unset';
     }
 
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+
+    if (isOpen) {
+      window.addEventListener('keydown', onKeyDown);
+    }
+
     return () => {
       document.body.style.overflow = 'unset';
+      window.removeEventListener('keydown', onKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 

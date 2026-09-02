@@ -1,10 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
 
-export default function DebugPage({ params: { locale } }: { params: { locale: string } }) {
-  const t = useTranslations();
+export default function DebugPage() {
   const [healthData, setHealthData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 

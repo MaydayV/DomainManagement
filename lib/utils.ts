@@ -1,17 +1,22 @@
 import { type ClassValue, clsx } from 'clsx';
-import { differenceInDays, parseISO, formatDistanceToNow } from 'date-fns';
+import { differenceInDays, formatDistanceToNow } from 'date-fns';
 import { zhCN, enUS } from 'date-fns/locale';
+import { toLocalDate } from './dates';
 
 // 合并 className
 export function cn(...inputs: ClassValue[]) {
   return clsx(inputs);
 }
 
-// 计算距离到期天数
-export function getDaysUntilExpiry(expiryDate: string): number {
-  const expiry = parseISO(expiryDate);
+function startOfToday(): Date {
   const today = new Date();
-  return differenceInDays(expiry, today);
+  today.setHours(0, 0, 0, 0);
+  return today;
+}
+
+// 计算距离到期天数（按本地日历日，避免时区偏移）
+export function getDaysUntilExpiry(expiryDate: string): number {
+  return differenceInDays(toLocalDate(expiryDate), startOfToday());
 }
 
 // 判断是否即将到期（30天内）
@@ -56,7 +61,7 @@ export function getExpiryStatus(expiryDate: string): {
 
 // 格式化相对时间
 export function formatRelativeTime(date: string, locale: 'zh' | 'en' = 'zh'): string {
-  return formatDistanceToNow(parseISO(date), {
+  return formatDistanceToNow(toLocalDate(date), {
     addSuffix: true,
     locale: locale === 'zh' ? zhCN : enUS,
   });

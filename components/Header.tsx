@@ -6,11 +6,10 @@ import { Globe, LogOut } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface HeaderProps {
-  locale: string;
   onLogout: () => void;
 }
 
-export function Header({ locale, onLogout }: HeaderProps) {
+export function Header({ onLogout }: HeaderProps) {
   const t = useTranslations();
 
   return (
@@ -27,7 +26,7 @@ export function Header({ locale, onLogout }: HeaderProps) {
 
           {/* Actions */}
           <div className="flex items-center gap-4">
-            <LanguageSwitcher locale={locale} />
+            <LanguageSwitcher />
             <button
               onClick={onLogout}
               className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:text-slate-900 transition-colors"

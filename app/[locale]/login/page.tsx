@@ -2,23 +2,23 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Lock, Globe } from 'lucide-react';
-import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { isTokenValid, readAuthToken, writeAuthToken } from '@/lib/auth-client';
 
-export default function LoginPage({ params: { locale } }: { params: { locale: string } }) {
+export default function LoginPage() {
   const t = useTranslations();
+  const locale = useLocale();
   const router = useRouter();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // 检查是否已登录
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      router.push(`/${locale}`);
+    const token = readAuthToken();
+    if (isTokenValid(token)) {
+      router.replace(`/${locale}`);
     }
   }, [locale, router]);
 
@@ -37,8 +37,8 @@ export default function LoginPage({ params: { locale } }: { params: { locale: st
       const data = await response.json();
 
       if (data.success) {
-        localStorage.setItem('auth_token', data.data.token);
-        router.push(`/${locale}`);
+        writeAuthToken(data.data.token);
+        router.replace(`/${locale}`);
       } else {
         setError(t('auth.incorrectPassword'));
       }
@@ -86,6 +86,7 @@ export default function LoginPage({ params: { locale } }: { params: { locale: st
                   className="input pl-10"
                   required
                   autoFocus
+                  autoComplete="current-password"
                 />
               </div>
               {error && <p className="mt-2 text-sm text-red-600">{error}</p>}

@@ -4,7 +4,8 @@ import React, { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Calendar, ExternalLink, Settings, Edit, Trash2, Clock, Info } from 'lucide-react';
 import { Domain } from '@/types';
-import { getDaysUntilExpiry, getExpiryStatus, cn } from '@/lib/utils';
+import { getDaysUntilExpiry, cn } from '@/lib/utils';
+import { formatDateOnly } from '@/lib/dates';
 import { formatPrice } from '@/lib/currencies';
 import { getRegistrarById, getRenewalUrl } from '@/lib/registrars';
 
@@ -15,13 +16,11 @@ interface DomainCardProps {
   locale: string;
   isMenuOpen: boolean;
   onMenuToggle: (isOpen: boolean) => void;
-  animationDelay?: number;
 }
 
-export function DomainCard({ domain, onEdit, onDelete, locale, isMenuOpen, onMenuToggle, animationDelay = 0 }: DomainCardProps) {
+export function DomainCard({ domain, onEdit, onDelete, locale, isMenuOpen, onMenuToggle }: DomainCardProps) {
   const t = useTranslations();
   const daysUntilExpiry = getDaysUntilExpiry(domain.expiryDate);
-  const expiryStatus = getExpiryStatus(domain.expiryDate);
   const registrar = getRegistrarById(domain.registrar);
   const renewalUrl = getRenewalUrl(domain);
 
@@ -59,26 +58,14 @@ export function DomainCard({ domain, onEdit, onDelete, locale, isMenuOpen, onMen
   const isExpired = daysUntilExpiry < 0;
   const isExpiringSoon = daysUntilExpiry >= 0 && daysUntilExpiry <= 30;
 
-  // 格式化日期为简短格式 2020/03/03
-  const formatShortDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString(locale, { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '/');
-  };
-
   return (
     <div 
       className={cn(
-        'relative bg-white rounded-xl border transition-all hover:shadow-2xl hover:-translate-y-1 p-5',
-        isExpired ? 'border-slate-300 bg-slate-50 opacity-60' : 'border-slate-200',
+        'relative bg-white rounded-xl border p-5 motion-safe:transition-all hover:shadow-lg hover:-translate-y-0.5',
+        isExpired ? 'border-slate-300 bg-slate-50 opacity-70' : 'border-slate-200',
         isExpiringSoon && !isExpired && 'border-yellow-300 bg-yellow-50/30 shadow-sm',
-        isMenuOpen && 'z-[50]' // 打开菜单时提升卡片层级
+        isMenuOpen && 'z-[50]'
       )}
-      style={{ 
-        animationDelay: `${animationDelay}s`,
-        // 避免闪烁，使用 opacity 控制显示
-        opacity: animationDelay > 0 ? 0 : 1,
-        animation: animationDelay > 0 ? `slideUp 0.3s ease-out ${animationDelay}s forwards` : 'none'
-      }}
       onClick={() => {
         // 点击卡片其他区域关闭菜单
         if (isMenuOpen) {
@@ -134,7 +121,7 @@ export function DomainCard({ domain, onEdit, onDelete, locale, isMenuOpen, onMen
               <Calendar className="w-4 h-4 text-slate-400" />
               <div className="flex flex-col">
                 <span className="text-xs text-slate-400">{t('domain.registrationDate')}</span>
-                <span className="font-medium text-slate-700">{formatShortDate(domain.registrationDate)}</span>
+                <span className="font-medium text-slate-700">{formatDateOnly(domain.registrationDate, locale)}</span>
               </div>
             </div>
           )}
@@ -145,13 +132,13 @@ export function DomainCard({ domain, onEdit, onDelete, locale, isMenuOpen, onMen
             <div className="flex flex-col flex-1">
               <span className="text-xs text-slate-400">{t('domain.expiryDate')}</span>
               <div className="flex items-center justify-between gap-2">
-                <span className="font-medium text-slate-900">{formatShortDate(domain.expiryDate)}</span>
+                <span className="font-medium text-slate-900">{formatDateOnly(domain.expiryDate, locale)}</span>
                 {daysUntilExpiry <= 30 && (
                   <span className={cn(
                     'px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap',
                     isExpired ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
                   )}>
-                    {isExpired ? t('domain.expired') : `${daysUntilExpiry}${t('domain.days')}`}
+                    {isExpired ? t('domain.expired') : t('domain.daysLeft', { count: daysUntilExpiry })}
                   </span>
                 )}
               </div>
@@ -214,7 +201,7 @@ export function DomainCard({ domain, onEdit, onDelete, locale, isMenuOpen, onMen
                   {/* 自动关闭提示 */}
                   <div className="absolute -top-8 right-0 flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-md">
                     <Clock className="w-3 h-3" />
-                    <span>3s自动关闭</span>
+                    <span>{t('domain.menuAutoClose')}</span>
                   </div>
                   <button
                     onClick={(e) => {

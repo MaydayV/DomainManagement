@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { dateOnlyPart, dateOnlyToISO, isValidDateOnly } from '@/lib/dates';
 
 interface DateInputProps {
   label?: string;
@@ -19,17 +20,8 @@ export function DateInput({ label, value, onChange, error, required, placeholder
   const [displayValue, setDisplayValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // 将 ISO 格式转换为显示格式 (YYYY-MM-DD)
   useEffect(() => {
-    if (value) {
-      const date = new Date(value);
-      if (!isNaN(date.getTime())) {
-        const formatted = date.toISOString().split('T')[0];
-        setDisplayValue(formatted);
-      }
-    } else {
-      setDisplayValue('');
-    }
+    setDisplayValue(value ? dateOnlyPart(value) : '');
   }, [value]);
 
   // 处理输入 - 支持快速输入 20250808
@@ -43,11 +35,9 @@ export function DateInput({ label, value, onChange, error, required, placeholder
       const day = input.substring(6, 8);
       const formatted = `${year}-${month}-${day}`;
       
-      // 验证日期有效性
-      const date = new Date(formatted);
-      if (!isNaN(date.getTime())) {
+      if (isValidDateOnly(formatted)) {
         setDisplayValue(formatted);
-        onChange(date.toISOString());
+        onChange(dateOnlyToISO(formatted));
         return;
       }
     }
@@ -96,11 +86,9 @@ export function DateInput({ label, value, onChange, error, required, placeholder
         }
         
         const formatted = `${year}-${month}-${day}`;
-        const date = new Date(formatted);
-        
-        if (!isNaN(date.getTime())) {
+        if (isValidDateOnly(formatted)) {
           setDisplayValue(formatted);
-          onChange(date.toISOString());
+          onChange(dateOnlyToISO(formatted));
           return;
         }
       }
@@ -114,11 +102,10 @@ export function DateInput({ label, value, onChange, error, required, placeholder
   const handleBlur = () => {
     if (!displayValue) return;
     
-    const date = new Date(displayValue);
-    if (!isNaN(date.getTime())) {
-      const formatted = date.toISOString().split('T')[0];
+    const formatted = dateOnlyPart(displayValue);
+    if (isValidDateOnly(formatted)) {
       setDisplayValue(formatted);
-      onChange(date.toISOString());
+      onChange(dateOnlyToISO(formatted));
     }
   };
 

@@ -30,9 +30,6 @@ export async function apiWithRetry<T>(
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`🔄 API请求 ${url} (尝试 ${attempt + 1}/${maxRetries + 1})`);
-
-      // 设置超时控制
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -43,6 +40,10 @@ export async function apiWithRetry<T>(
 
       clearTimeout(timeoutId);
 
+      if (response.status === 401) {
+        return { success: false, error: 'Unauthorized' };
+      }
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -50,37 +51,26 @@ export async function apiWithRetry<T>(
       const result = await response.json();
       
       if (result.success) {
-        console.log(`✅ API请求成功 (尝试 ${attempt + 1})`);
         return result;
       } else {
-        // 业务逻辑错误，不需要重试
-        console.log(`❌ API业务错误: ${result.error}`);
         return result;
       }
 
     } catch (error: any) {
       lastError = error;
-      console.log(`⚠️ API请求失败 (尝试 ${attempt + 1}): ${error.message}`);
 
-      // 如果不是网络错误，不重试
       if (!isNetworkError(error)) {
-        console.log(`🚫 非网络错误，停止重试: ${error.message}`);
         break;
       }
 
-      // 最后一次尝试，不再等待
       if (attempt === maxRetries) {
         break;
       }
 
-      // 指数退避延迟
       const delay = Math.min(baseDelay * Math.pow(2, attempt), maxDelay);
-      console.log(`⏳ ${delay}ms 后重试...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
-
-  console.log(`❌ 所有重试失败: ${lastError.message}`);
   return {
     success: false,
     error: formatErrorMessage(lastError),

@@ -9,7 +9,7 @@ import { Button } from './ui/Button';
 
 interface ImportExportPanelProps {
   domains: Domain[];
-  onImport: (domains: Partial<Domain>[]) => void;
+  onImport: (domains: Partial<Domain>[]) => Promise<{ added: number; skipped: number }>;
   locale: string;
 }
 
@@ -55,7 +55,12 @@ export function ImportExportPanel({ domains, onImport, locale }: ImportExportPan
       );
       
       if (confirmed) {
-        onImport(importedDomains);
+        const result = await onImport(importedDomains);
+        alert(
+          t('message.importResult')
+            .replace('{added}', String(result.added))
+            .replace('{skipped}', String(result.skipped))
+        );
       }
     } catch (error) {
       console.error('Import failed:', error);

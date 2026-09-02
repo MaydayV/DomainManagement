@@ -20,13 +20,14 @@ function requireAuth(request: NextRequest) {
 // GET - 获取单个域名
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authError = requireAuth(request);
   if (authError) return authError;
 
   try {
-    const domain = await getDomainById(params.id);
+    const { id } = await params;
+    const domain = await getDomainById(id);
 
     if (!domain) {
       return NextResponse.json(
@@ -51,12 +52,13 @@ export async function GET(
 // PUT - 更新域名
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authError = requireAuth(request);
   if (authError) return authError;
 
   try {
+    const { id } = await params;
     const body = await request.json();
     
     // 确保所有字段都被正确处理
@@ -72,7 +74,7 @@ export async function PUT(
       notes: body.notes,
     };
 
-    const updatedDomain = await updateDomain(params.id, updateData);
+    const updatedDomain = await updateDomain(id, updateData);
 
     if (!updatedDomain) {
       return NextResponse.json(
@@ -97,13 +99,14 @@ export async function PUT(
 // DELETE - 删除域名
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authError = requireAuth(request);
   if (authError) return authError;
 
   try {
-    const success = await deleteDomain(params.id);
+    const { id } = await params;
+    const success = await deleteDomain(id);
 
     if (!success) {
       return NextResponse.json(
@@ -114,7 +117,7 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      data: { id: params.id },
+      data: { id },
     });
   } catch (error) {
     console.error('Delete domain error:', error);

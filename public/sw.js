@@ -1,80 +1,62 @@
-// Service Worker for PWA
-const CACHE_NAME = 'domain-management-v2';
-const urlsToCache = [
-  '/zh',
-  '/en', 
-  '/zh/login',
-  '/en/login',
-  '/manifest.json',
-  '/favicon.ico'
-];
+const CACHE_NAME = 'domain-management-v3';
 
-// 安装 Service Worker
-self.addEventListener('install', function(event) {
-  console.log('SW: Installing...');
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(function(cache) {
-        console.log('SW: Caching app shell');
-        return cache.addAll(urlsToCache);
-      })
-  );
-});
-
-// 激活 Service Worker
-self.addEventListener('activate', function(event) {
-  console.log('SW: Activating...');
-  event.waitUntil(
-    caches.keys().then(function(cacheNames) {
-      return Promise.all(
-        cacheNames.map(function(cacheName) {
-          if (cacheName !== CACHE_NAME) {
-            console.log('SW: Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
-  );
-});
-
-// 拦截网络请求
-self.addEventListener('fetch', function(event) {
-  const url = event.request.url;
-  
-  // 跳过 API 请求和 Chrome 扩展请求
-  if (url.includes('/api/') || url.includes('chrome-extension://')) {
-    return;
-  }
-  
-  // 对于根路径 "/"，重定向到 "/zh"
-  if (url.endsWith('/') && !url.includes('/zh') && !url.includes('/en')) {
-    event.respondWith(Response.redirect('/zh', 302));
-    return;
-  }
-  
-  event.respondWith(
-    caches.match(event.request)
-      .then(function(response) {
-        // 缓存命中，返回缓存版本
-        if (response) {
-          console.log('SW: Serving from cache:', event.request.url);
-          return response;
-        }
-        
-        // 缓存未命中，从网络获取
-        console.log('SW: Fetching from network:', event.request.url);
-        return fetch(event.request).then(function(response) {
-          // 只缓存成功的响应
-          if (response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then(function(cache) {
-              cache.put(event.request, responseClone);
-            });
-          }
-          return response;
-        });
-      }
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.addAll(['/manifest.json', '/favicon.ico', '/offline'])
     )
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) =>
+      Promise.all(
+        cacheNames
+          .filter((name) => name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
+      )
+    ).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith('/api/')) return;
+
+  const isDocument = request.destination === 'document' || request.mode === 'navigate';
+  const isScriptOrStyle =
+    request.destination === 'script' ||
+    request.destination === 'style' ||
+    url.pathname.startsWith('/_next/');
+
+  // App shell and JS/CSS must stay network-first so deploys are not stuck on stale cache.
+  if (isDocument || isScriptOrStyle) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => response)
+        .catch(() => caches.match(request).then((cached) => cached || caches.match('/offline')))
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      const networked = fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => cached);
+      return cached || networked;
+    })
   );
 });

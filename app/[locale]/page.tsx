@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Plus } from 'lucide-react';
-import { Domain, SortOption, FilingStatus } from '@/types';
+import { Domain, FilingStatus, SortOption } from '@/types';
 import { Header } from '@/components/Header';
 import { SearchBar } from '@/components/SearchBar';
 import { FilterBar } from '@/components/FilterBar';
@@ -14,225 +14,232 @@ import { StatsPanel } from '@/components/StatsPanel';
 import { ImportExportPanel } from '@/components/ImportExportPanel';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { PageSkeleton } from '@/components/PageSkeleton';
 import { apiWithRetry } from '@/lib/api-retry';
+import { filterAndSortDomains } from '@/lib/domain-query';
+import {
+  readDomainsCache,
+  writeDomainsCache,
+  readFilterPrefs,
+  writeFilterPrefs,
+  clearDomainsCache,
+} from '@/lib/client-cache';
+import {
+  authHeaders,
+  clearAuthToken,
+  isTokenValid,
+  readAuthToken,
+} from '@/lib/auth-client';
 
-export default function HomePage({ params: { locale } }: { params: { locale: string } }) {
+export default function HomePage() {
   const t = useTranslations();
+  const locale = useLocale();
   const router = useRouter();
 
-  // State
-  const [domains, setDomains] = useState<Domain[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [registrarFilter, setRegistrarFilter] = useState('');
-  const [filingStatusFilter, setFilingStatusFilter] = useState<FilingStatus>('');
-  const [sortBy, setSortBy] = useState<SortOption>('expiry-asc');
+  const cachedDomains = useMemo(() => readDomainsCache() ?? [], []);
+  const savedFilters = useMemo(() => readFilterPrefs(), []);
 
-  // Modal state
+  const [allDomains, setAllDomains] = useState<Domain[]>(cachedDomains);
+  const [loading, setLoading] = useState(cachedDomains.length === 0);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState(savedFilters?.searchQuery ?? '');
+  const [registrarFilter, setRegistrarFilter] = useState(savedFilters?.registrarFilter ?? '');
+  const [filingStatusFilter, setFilingStatusFilter] = useState<FilingStatus>(
+    savedFilters?.filingStatusFilter ?? ''
+  );
+  const [sortBy, setSortBy] = useState<SortOption>(savedFilters?.sortBy ?? 'expiry-asc');
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingDomain, setEditingDomain] = useState<Domain | null>(null);
   const [deletingDomain, setDeletingDomain] = useState<Domain | null>(null);
-  
-  // 菜单状态统一管理
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [authToken, setAuthToken] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
-  // Auth token
-  const [authToken, setAuthToken] = useState<string>('');
-
-  useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      router.push(`/${locale}/login`);
-      return;
-    }
-    setAuthToken(token);
+  const redirectToLogin = useCallback(() => {
+    clearAuthToken();
+    clearDomainsCache();
+    router.replace(`/${locale}/login`);
   }, [locale, router]);
 
-  // Fetch domains
   useEffect(() => {
-    if (!authToken) return;
-
-    // 设置加载状态（但不在初始加载时显示，避免闪烁）
-    const isInitialLoad = domains.length === 0;
-    if (!isInitialLoad) {
-      setLoading(true);
+    const token = readAuthToken();
+    if (!isTokenValid(token)) {
+      redirectToLogin();
+      return;
     }
+    setAuthToken(token as string);
+  }, [redirectToLogin]);
 
-    const fetchDomains = async () => {
+  const fetchDomains = useCallback(
+    async (token: string, silent = false) => {
+      if (!silent && allDomains.length === 0) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
+
       try {
-        const params = new URLSearchParams();
-        if (searchQuery) params.append('search', searchQuery);
-        if (registrarFilter) params.append('registrar', registrarFilter);
-        if (filingStatusFilter) params.append('filingStatus', filingStatusFilter);
-        params.append('sort', sortBy);
-
-        const response = await fetch(`/api/domains?${params}`, {
-          headers: { Authorization: `Bearer ${authToken}` },
+        const response = await fetch('/api/domains', {
+          headers: authHeaders(token),
+          cache: 'no-store',
         });
+
+        if (response.status === 401) {
+          redirectToLogin();
+          return;
+        }
 
         const data = await response.json();
         if (data.success) {
-          setDomains(data.data);
+          setAllDomains(data.data);
+          writeDomainsCache(data.data);
+          setError('');
+        } else {
+          setError(data.error || t('message.operationFailed'));
         }
-      } catch (error) {
-        console.error('Failed to fetch domains:', error);
+      } catch {
+        if (allDomains.length === 0) {
+          setError(t('message.networkError'));
+        }
       } finally {
         setLoading(false);
+        setRefreshing(false);
       }
-    };
+    },
+    [allDomains.length, redirectToLogin, t]
+  );
 
-    // 延迟执行，避免频繁调用
-    const timeoutId = setTimeout(fetchDomains, 100);
-    
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, [authToken, searchQuery, registrarFilter, filingStatusFilter, sortBy, domains.length]);
+  useEffect(() => {
+    if (!authToken) return;
+    fetchDomains(authToken, allDomains.length > 0);
+    // Initial load only when token becomes available
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authToken]);
 
-  // Handlers
+  useEffect(() => {
+    writeFilterPrefs({
+      searchQuery,
+      registrarFilter,
+      filingStatusFilter,
+      sortBy,
+    });
+  }, [searchQuery, registrarFilter, filingStatusFilter, sortBy]);
+
+  const visibleDomains = useMemo(
+    () =>
+      filterAndSortDomains(
+        allDomains,
+        {
+          searchQuery,
+          registrar: registrarFilter,
+          filingStatus: filingStatusFilter,
+        },
+        sortBy
+      ),
+    [allDomains, searchQuery, registrarFilter, filingStatusFilter, sortBy]
+  );
+
+  const hasActiveFilters = Boolean(searchQuery || registrarFilter || filingStatusFilter);
+
   const handleLogout = () => {
-    localStorage.removeItem('auth_token');
-    router.push(`/${locale}/login`);
+    redirectToLogin();
   };
 
   const handleAddDomain = () => {
     setEditingDomain(null);
+    setSubmitError('');
     setIsFormOpen(true);
   };
 
   const handleEditDomain = (domain: Domain) => {
     setEditingDomain(domain);
+    setSubmitError('');
     setIsFormOpen(true);
   };
 
-  const handleDeleteDomain = (domain: Domain) => {
-    setDeletingDomain(domain);
-  };
-
   const handleImportDomains = async (importedDomains: Partial<Domain>[]) => {
-    try {
-      for (const domainData of importedDomains) {
-        const response = await fetch('/api/domains', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify(domainData),
-        });
+    const response = await fetch('/api/domains/bulk', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders(authToken),
+      },
+      body: JSON.stringify({ domains: importedDomains }),
+    });
 
-        const result = await response.json();
-        if (!result.success) {
-          console.error('Failed to import domain:', domainData.name, result.error);
-        }
-      }
-
-      // 刷新域名列表
-      const params = new URLSearchParams();
-      params.append('sort', sortBy);
-
-      const domainsResponse = await fetch(`/api/domains?${params}`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      const domainsData = await domainsResponse.json();
-      if (domainsData.success) {
-        setDomains(domainsData.data);
-      }
-
-      alert(t('message.importSuccess').replace('{count}', importedDomains.length.toString()));
-    } catch (error) {
-      console.error('Import error:', error);
-      alert(t('message.importFailed'));
+    if (response.status === 401) {
+      redirectToLogin();
+      throw new Error('Unauthorized');
     }
-  };
 
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string>('');
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || t('message.importFailed'));
+    }
+
+    await fetchDomains(authToken, true);
+    return {
+      added: result.data.addedCount as number,
+      skipped: result.data.skippedCount as number,
+    };
+  };
 
   const handleSubmitDomain = async (data: Partial<Domain>) => {
-    console.log('📝 Submitting domain:', data);
-    
     setSubmitting(true);
     setSubmitError('');
-    
-    try {
-      const url = editingDomain
-        ? `/api/domains/${editingDomain.id}`
-        : '/api/domains';
 
+    try {
+      const url = editingDomain ? `/api/domains/${editingDomain.id}` : '/api/domains';
       const method = editingDomain ? 'PUT' : 'POST';
 
-      // 使用重试机制的 API 调用
-      const result = await apiWithRetry(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${authToken}`,
+      const result = await apiWithRetry(
+        url,
+        {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders(authToken),
+          },
+          body: JSON.stringify(data),
         },
-        body: JSON.stringify(data),
-      }, {
-        maxRetries: 2, // 最多重试2次
-        baseDelay: 1000, // 1秒基础延迟
-        timeout: 15000, // 15秒超时
-      });
-
-      console.log('✅ Submit result:', result);
+        {
+          maxRetries: 2,
+          baseDelay: 1000,
+          timeout: 15000,
+        }
+      );
 
       if (result.success) {
-        console.log('🚪 Domain saved successfully, closing modal...');
-        
-        // 立即关闭弹窗（乐观更新）
         setIsFormOpen(false);
         setEditingDomain(null);
         setOpenMenuId(null);
 
-        // 乐观更新：先在前端显示新域名
         if (!editingDomain && result.data) {
-          setDomains(prev => [...prev, result.data as Domain]);
+          setAllDomains((prev) => {
+            const next = [...prev, result.data as Domain];
+            writeDomainsCache(next);
+            return next;
+          });
         } else if (editingDomain && result.data) {
-          setDomains(prev => prev.map(d => d.id === editingDomain.id ? result.data as Domain : d));
+          setAllDomains((prev) => {
+            const next = prev.map((d) =>
+              d.id === editingDomain.id ? (result.data as Domain) : d
+            );
+            writeDomainsCache(next);
+            return next;
+          });
         }
 
-        // 后台验证：延迟刷新确保数据一致性
-        setTimeout(async () => {
-          try {
-            const params = new URLSearchParams();
-            if (searchQuery) params.append('search', searchQuery);
-            if (registrarFilter) params.append('registrar', registrarFilter);
-            if (filingStatusFilter) params.append('filingStatus', filingStatusFilter);
-            params.append('sort', sortBy);
-
-            const domainsResponse = await fetch(`/api/domains?${params}`, {
-              headers: { Authorization: `Bearer ${authToken}` },
-            });
-            const domainsData = await domainsResponse.json();
-            if (domainsData.success) {
-              setDomains(domainsData.data);
-            }
-          } catch (error) {
-            console.log('🔄 Background refresh failed, but domain should be saved');
-          }
-        }, 2000);
-        
+        fetchDomains(authToken, true);
       } else {
-        console.error('❌ Submit failed:', result.error);
-        
-        // 区分错误类型
-        if (result.error?.includes('timeout') || result.error?.includes('Network')) {
-          setSubmitError(
-            t('message.networkDelayWarning') || 
-            '网络延迟，数据可能已保存成功。请关闭弹窗并刷新页面检查。'
-          );
-        } else {
-          setSubmitError(result.error || t('message.operationFailed'));
-        }
+        setSubmitError(result.error || t('message.operationFailed'));
       }
-    } catch (error: any) {
-      console.error('❌ Network error:', error);
-      setSubmitError(
-        t('message.networkDelayWarning') || 
-        '网络延迟，数据可能已保存成功。请关闭弹窗并刷新页面检查。'
-      );
+    } catch {
+      setSubmitError(t('message.networkDelayWarning'));
     } finally {
       setSubmitting(false);
     }
@@ -240,58 +247,67 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
 
   const handleConfirmDelete = async () => {
     if (!deletingDomain) return;
+    setDeleting(true);
 
     try {
       const response = await fetch(`/api/domains/${deletingDomain.id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: authHeaders(authToken),
       });
 
-      const result = await response.json();
+      if (response.status === 401) {
+        redirectToLogin();
+        return;
+      }
 
+      const result = await response.json();
       if (result.success) {
-        setDomains(domains.filter(d => d.id !== deletingDomain.id));
+        setAllDomains((prev) => {
+          const next = prev.filter((d) => d.id !== deletingDomain.id);
+          writeDomainsCache(next);
+          return next;
+        });
         setDeletingDomain(null);
       }
-    } catch (error) {
-      console.error('Failed to delete domain:', error);
+    } catch (err) {
+      console.error('Failed to delete domain:', err);
+    } finally {
+      setDeleting(false);
     }
   };
 
-  // 只在真正需要时显示加载状态，避免初始闪烁
-  if (loading && domains.length === 0) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <Header locale={locale} onLogout={handleLogout} />
-        <main className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center py-16">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-              <p className="mt-4 text-slate-600">{t('common.loading')}</p>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
+  if (loading && allDomains.length === 0) {
+    return <PageSkeleton />;
   }
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Header locale={locale} onLogout={handleLogout} />
+      {refreshing && (
+        <div className="fixed top-0 left-0 right-0 z-[60] h-0.5 overflow-hidden bg-primary-100">
+          <div className="h-full w-1/3 bg-primary-600 animate-progress" />
+        </div>
+      )}
+
+      <Header onLogout={handleLogout} />
 
       <main className="container mx-auto px-4 py-8">
-        {/* 数据统计面板 */}
-        <StatsPanel domains={domains} locale={locale} />
+        <StatsPanel domains={allDomains} locale={locale} />
 
-        {/* Toolbar - 单行布局 */}
-        <div className="mb-8 animate-slide-down">
-          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
-            {/* 搜索框 */}
+        {error && (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex items-center justify-between gap-4">
+            <span>{error}</span>
+            <Button variant="secondary" size="sm" onClick={() => fetchDomains(authToken)}>
+              {t('common.retry')}
+            </Button>
+          </div>
+        )}
+
+        <div className="mb-8">
+          <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center">
             <div className="w-full lg:w-80">
               <SearchBar value={searchQuery} onChange={setSearchQuery} />
             </div>
 
-            {/* 筛选和排序 */}
             <div className="flex-1 w-full lg:w-auto">
               <FilterBar
                 registrar={registrarFilter}
@@ -301,40 +317,40 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
                 onFilingStatusChange={setFilingStatusFilter}
                 onSortChange={setSortBy}
                 locale={locale}
-                domains={domains}
+                domains={allDomains}
               />
             </div>
 
-            {/* 导入导出按钮 */}
-            <ImportExportPanel
-              domains={domains}
-              onImport={handleImportDomains}
-              locale={locale}
-            />
+            <div className="flex items-center gap-2 flex-wrap">
+              <ImportExportPanel
+                domains={allDomains}
+                onImport={handleImportDomains}
+                locale={locale}
+              />
 
-            {/* 添加按钮 */}
-            <Button variant="primary" onClick={handleAddDomain} size="md">
-              <Plus className="w-4 h-4 mr-2" />
-              {t('domain.addDomain')}
-            </Button>
+              <Button variant="primary" onClick={handleAddDomain} size="md">
+                <Plus className="w-4 h-4 mr-2" />
+                {t('domain.addDomain')}
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* Domain List */}
         <DomainList
-          domains={domains}
+          domains={visibleDomains}
           onEdit={handleEditDomain}
-          onDelete={handleDeleteDomain}
+          onDelete={setDeletingDomain}
           locale={locale}
           openMenuId={openMenuId}
           onMenuToggle={setOpenMenuId}
+          hasFilters={hasActiveFilters}
         />
       </main>
 
-      {/* Add/Edit Modal */}
       <Modal
         isOpen={isFormOpen}
         onClose={() => {
+          if (submitting) return;
           setIsFormOpen(false);
           setEditingDomain(null);
         }}
@@ -354,10 +370,9 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
         />
       </Modal>
 
-      {/* Delete Confirmation Modal */}
       <Modal
         isOpen={!!deletingDomain}
-        onClose={() => setDeletingDomain(null)}
+        onClose={() => !deleting && setDeletingDomain(null)}
         title={t('domain.deleteDomain')}
         size="sm"
       >
@@ -369,12 +384,14 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
               variant="danger"
               onClick={handleConfirmDelete}
               className="flex-1"
+              disabled={deleting}
             >
-              {t('common.delete')}
+              {deleting ? t('common.loading') : t('common.delete')}
             </Button>
             <Button
               variant="secondary"
               onClick={() => setDeletingDomain(null)}
+              disabled={deleting}
             >
               {t('common.cancel')}
             </Button>
@@ -384,4 +401,3 @@ export default function HomePage({ params: { locale } }: { params: { locale: str
     </div>
   );
 }
-

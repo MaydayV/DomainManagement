@@ -14,7 +14,8 @@
     "filter": "筛选",
     "sort": "排序",
     "reset": "重置",
-    "close": "关闭"
+    "close": "关闭",
+    "retry": "重试"
   },
   "auth": {
     "login": "登录",
@@ -43,10 +44,15 @@
     "notes": "备注",
     "renew": "续费",
     "days": "天",
+    "daysLeft": "{count}天",
     "expired": "已过期",
     "expiringSoon": "即将到期",
     "noDomains": "暂无域名",
+    "noMatches": "没有匹配的域名",
+    "tryDifferentFilters": "试试调整搜索或筛选条件",
     "addFirstDomain": "添加第一个域名",
+    "menuAutoClose": "3秒后自动关闭",
+    "whoisQueryTime": "查询耗时: {time}s",
     "deleteConfirm": "确定要删除此域名吗？",
     "customRenewalUrl": "自定义续费链接（可选）",
     "whoisLookup": "WHOIS 查询",
@@ -65,6 +71,7 @@
   "filingStatus": {
     "filed": "已备案",
     "notFiled": "未备案",
+    "not-filed": "未备案",
     "filing": "备案中",
     "empty": "未设置"
   },
@@ -111,6 +118,7 @@
     "importConfirm": "确定要导入 {count} 个域名吗？现有数据不会被删除。",
     "importFailed": "导入失败，请检查 CSV 格式",
     "importSuccess": "成功导入 {count} 个域名",
+    "importResult": "导入完成：新增 {added} 个，跳过重复 {skipped} 个",
     "exportSuccess": "数据导出成功",
     "whoisFailed": "WHOIS 查询失败，请检查域名格式",
     "networkDelayWarning": "网络延迟导致响应超时，但数据可能已保存成功。请关闭弹窗并刷新页面查看最新数据。",

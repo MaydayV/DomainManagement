@@ -18,13 +18,5 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <html>
-      <head>
-        <link rel="icon" href="/favicon.ico" />
-        <meta name="robots" content="noindex, nofollow" />
-      </head>
-      <body>{children}</body>
-    </html>
-  );
+  return children;
 }

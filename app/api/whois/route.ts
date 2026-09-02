@@ -4,16 +4,10 @@ import { getSessionFromHeader, validateSession } from '@/lib/auth';
 // WHOIS 查询 API - 使用 apihz.cn whoisall 接口实现（支持全球1000+域名后缀）
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
-  console.log('🔐 Auth header received:', authHeader ? `Bearer ${authHeader.substring(0, 20)}...` : 'None');
-  
   const session = getSessionFromHeader(authHeader);
-  console.log('🔐 Session parsed:', session ? { authenticated: session.authenticated, expiresAt: session.expiresAt ? new Date(session.expiresAt).toISOString() : 'N/A' } : 'None');
-  
   const isValid = validateSession(session);
-  console.log('🔐 Session valid:', isValid);
 
   if (!isValid) {
-    console.log('❌ Unauthorized: Invalid or expired session');
     return NextResponse.json(
       { success: false, error: 'Unauthorized' },
       { status: 401 }
@@ -45,55 +39,28 @@ export async function GET(request: NextRequest) {
     const cached = globalThis.whoisCache?.[cacheKey];
     
     if (cached && (Date.now() - cached.timestamp) < 3600000) { // 1小时缓存
-      console.log('🎯 Using cached WHOIS data for:', domain);
       return NextResponse.json({
         success: true,
         data: { ...cached.data, cached: true },
       });
     }
 
-    console.log(`🔍 Querying WHOIS for: ${domain}`);
     const startTime = Date.now();
 
-    // 使用 apihz.cn WHOIS API（支持全球1000+域名后缀查询）image.png
     const apiId = process.env.WHOIS_API_ID;
     const apiKey = process.env.WHOIS_API_KEY;
-    
-    console.log('🔑 API Credentials check:', { 
-      hasApiId: !!apiId, 
-      hasApiKey: !!apiKey,
-      apiIdLength: apiId?.length,
-      apiKeyLength: apiKey?.length 
-    });
     
     if (!apiId || !apiKey) {
       throw new Error('WHOIS API credentials not configured. Please set WHOIS_API_ID and WHOIS_API_KEY environment variables.');
     }
     
-    // 先尝试获取最优接口地址
-    let apiEndpoint = 'https://cn.apihz.cn/api/wangzhan/whoisall.php';
-    
-    try {
-      const optimalResponse = await fetch('https://api.apihz.cn/getapi.php', {
-        signal: AbortSignal.timeout(3000),
-      });
-      if (optimalResponse.ok) {
-        const optimalUrl = await optimalResponse.text();
-        if (optimalUrl && optimalUrl.startsWith('http')) {
-          // 替换接口路径为 whoisall.php
-          apiEndpoint = optimalUrl.trim().replace('/whois.php', '/whoisall.php');
-          console.log(`📡 Using optimal endpoint: ${apiEndpoint}`);
-        }
-      }
-    } catch (err) {
-      console.log('⚠️ Could not fetch optimal endpoint, using default domain endpoint');
-    }
+    const apiEndpoint = 'https://cn.apihz.cn/api/wangzhan/whoisall.php';
 
     // type=1 表示优先使用缓存，type=2 直接查询官方
     const whoisUrl = `${apiEndpoint}?id=${apiId}&key=${apiKey}&domain=${domain}&type=1`;
     const whoisResponse = await fetch(whoisUrl, {
       headers: {
-        'User-Agent': 'DomainManagement/1.0',
+        'User-Agent': 'DomainManagement/2.0',
         'Accept': 'application/json',
       },
       signal: AbortSignal.timeout(15000), // 15秒超时
@@ -105,7 +72,6 @@ export async function GET(request: NextRequest) {
 
     // 先获取文本，然后手动解析 JSON（API 返回的 JSON 包含未转义的控制字符）
     const responseText = await whoisResponse.text();
-    console.log('📥 Raw response length:', responseText.length);
     
     let whoisData;
     try {
@@ -127,7 +93,6 @@ export async function GET(request: NextRequest) {
       );
       
       whoisData = JSON.parse(fixedText);
-      console.log('✅ Successfully parsed WHOIS response');
     } catch (parseError: any) {
       console.error('❌ JSON parse error:', parseError.message);
       console.error('Response sample:', responseText.substring(0, 500));
@@ -141,14 +106,8 @@ export async function GET(request: NextRequest) {
       throw new Error(whoisData.msg || 'WHOIS lookup failed');
     }
 
-    console.log(`✅ WHOIS query completed in ${queryTime}s using apihz.cn (whoisall)`);
-
-    // 解析原始 WHOIS 文本数据
     const whoisText = whoisData.whois || '';
-    console.log('📄 WHOIS text length:', whoisText.length);
-    
     const parsedData = parseWhoisText(whoisText);
-    console.log('🔍 Parsed data:', JSON.stringify(parsedData, null, 2));
     
     const registrarId = mapRegistrarToId(parsedData.registrar || '');
     
@@ -163,8 +122,6 @@ export async function GET(request: NextRequest) {
       source: 'apihz.cn-whoisall',
     };
     
-    console.log('📊 Response data:', JSON.stringify(responseData, null, 2));
-
     // 缓存结果
     if (!globalThis.whoisCache) globalThis.whoisCache = {};
     globalThis.whoisCache[cacheKey] = {
@@ -172,14 +129,6 @@ export async function GET(request: NextRequest) {
       timestamp: Date.now(),
     };
 
-    console.log('📊 WHOIS data processed:', {
-      domain: responseData.domain,
-      registrar: responseData.registrarName,
-      registrarId,
-      created: responseData.registrationDate,
-      expires: responseData.expiryDate,
-    });
-    
     return NextResponse.json({
       success: true,
       data: responseData,

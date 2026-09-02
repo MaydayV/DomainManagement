@@ -38,10 +38,17 @@ export async function GET(request: NextRequest) {
     const domains = await getDomains();
     const filteredDomains = filterAndSortDomains(domains, filters, sort);
 
-    return NextResponse.json({
-      success: true,
-      data: filteredDomains,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: filteredDomains,
+      },
+      {
+        headers: {
+          'Cache-Control': 'private, no-store',
+        },
+      }
+    );
   } catch (error) {
     console.error('Get domains error:', error);
     return NextResponse.json(
@@ -67,8 +74,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('📝 Adding domain:', body.name);
-    
     const newDomain = await addDomain({
       name: body.name,
       registrar: body.registrar,
@@ -80,8 +85,6 @@ export async function POST(request: NextRequest) {
       renewalUrl: body.renewalUrl,
       notes: body.notes,
     });
-
-    console.log('✅ Domain added:', newDomain.name);
 
     return NextResponse.json({
       success: true,

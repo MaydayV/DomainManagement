@@ -13,9 +13,18 @@ interface DomainListProps {
   locale: string;
   openMenuId: string | null;
   onMenuToggle: (id: string | null) => void;
+  hasFilters?: boolean;
 }
 
-export function DomainList({ domains, onEdit, onDelete, locale, openMenuId, onMenuToggle }: DomainListProps) {
+export function DomainList({
+  domains,
+  onEdit,
+  onDelete,
+  locale,
+  openMenuId,
+  onMenuToggle,
+  hasFilters = false,
+}: DomainListProps) {
   const t = useTranslations();
 
   if (domains.length === 0) {
@@ -23,16 +32,18 @@ export function DomainList({ domains, onEdit, onDelete, locale, openMenuId, onMe
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <FolderOpen className="w-16 h-16 text-slate-300 mb-4" />
         <h3 className="text-lg font-medium text-slate-900 mb-2">
-          {t('domain.noDomains')}
+          {hasFilters ? t('domain.noMatches') : t('domain.noDomains')}
         </h3>
-        <p className="text-slate-500">{t('domain.addFirstDomain')}</p>
+        <p className="text-slate-500">
+          {hasFilters ? t('domain.tryDifferentFilters') : t('domain.addFirstDomain')}
+        </p>
       </div>
     );
   }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 domain-grid">
-      {domains.map((domain, index) => (
+      {domains.map((domain) => (
         <DomainCard
           key={domain.id}
           domain={domain}
@@ -41,7 +52,6 @@ export function DomainList({ domains, onEdit, onDelete, locale, openMenuId, onMe
           locale={locale}
           isMenuOpen={openMenuId === domain.id}
           onMenuToggle={(isOpen) => onMenuToggle(isOpen ? domain.id : null)}
-          animationDelay={index * 0.05}
         />
       ))}
     </div>

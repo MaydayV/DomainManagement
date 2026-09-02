@@ -90,7 +90,7 @@ export const DEFAULT_REGISTRARS: Registrar[] = [
       en: 'Porkbun',
     },
     website: 'https://porkbun.com',
-    renewalUrlTemplate: 'https://porkbun.com/account/domainsSpeadsheet',
+    renewalUrlTemplate: 'https://porkbun.com/account/domains',
   },
   {
     id: 'godaddy',

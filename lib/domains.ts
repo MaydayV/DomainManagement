@@ -1,6 +1,10 @@
-import { Domain, FilterOptions, SortOption } from '@/types';
+import { Domain } from '@/types';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { generateId } from './utils';
+import { filterAndSortDomains } from './domain-query';
+
+export { filterAndSortDomains };
 
 // 检测是否在 Vercel 环境 - 更准确的检测
 const IS_VERCEL = !!(process.env.VERCEL || process.env.VERCEL_ENV);
@@ -11,18 +15,11 @@ const KV_KEY = 'domains';
 let kv: any = null;
 try {
   kv = require('@vercel/kv').kv;
-  console.log('✅ Vercel KV imported successfully');
-} catch (error) {
-  console.warn('⚠️ Vercel KV not available:', error);
+} catch {
+  kv = null;
 }
 
-// 验证 KV 配置
 const hasKvConfig = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
-console.log('🔍 Environment check:', {
-  IS_VERCEL,
-  hasKvConfig,
-  hasKV: !!kv,
-});
 
 // 确保数据目录存在
 async function ensureDataDirectory() {
@@ -36,76 +33,50 @@ async function ensureDataDirectory() {
 
 // 读取域名数据
 export async function getDomains(): Promise<Domain[]> {
-  console.log('📖 Reading domains, environment:', { IS_VERCEL, hasKV: !!kv, hasKvConfig });
-  
-  // Vercel 环境且有 KV：从 KV 读取
   if (IS_VERCEL && kv && hasKvConfig) {
     try {
-      console.log('📡 Reading from KV...');
       const data = await kv.get(KV_KEY);
-      console.log('✅ KV read success:', Array.isArray(data) ? `${data.length} domains` : 'no data');
-      return data || [];
+      return Array.isArray(data) ? data : [];
     } catch (error) {
-      console.error('❌ Failed to read from KV:', error);
-      console.error('🔧 Attempting file storage fallback...');
+      console.error('Failed to read from KV:', error);
     }
   }
 
-  // 本地环境或 KV 失败时：从文件读取
   if (!IS_VERCEL) {
     try {
       await ensureDataDirectory();
       const data = await fs.readFile(DATA_FILE, 'utf-8');
-      console.log('📄 File read success');
       return JSON.parse(data);
-    } catch (error) {
-      console.log('📄 File not found, returning empty array');
+    } catch {
       return [];
     }
-  } else {
-    // Vercel 环境但 KV 不可用
-    console.error('🚨 CRITICAL: In Vercel but KV not available!');
-    return [];
   }
+
+  console.error('Vercel environment but KV is not available');
+  return [];
 }
 
 // 保存域名数据
 export async function saveDomains(domains: Domain[]): Promise<void> {
-  console.log('💾 Saving domains, environment:', { IS_VERCEL, hasKV: !!kv, hasKvConfig, count: domains.length });
-  
-  // Vercel 环境：必须使用 KV
   if (IS_VERCEL && kv && hasKvConfig) {
     try {
-      console.log('📡 Saving to KV...');
       await kv.set(KV_KEY, domains);
-      console.log(`✅ Saved ${domains.length} domains to KV successfully`);
       return;
     } catch (error: any) {
-      console.error('❌ Failed to save to KV:', error);
       throw new Error(`KV save failed: ${error?.message || 'Unknown error'}`);
     }
   }
 
-  // 本地环境：使用文件存储
   if (!IS_VERCEL) {
     try {
       await ensureDataDirectory();
       await fs.writeFile(DATA_FILE, JSON.stringify(domains, null, 2), 'utf-8');
-      console.log(`✅ Saved ${domains.length} domains to file`);
       return;
     } catch (error: any) {
-      console.error('❌ Failed to save to file:', error);
       throw new Error(`File save failed: ${error?.message || 'Unknown error'}`);
     }
   }
 
-  // Vercel 环境但 KV 不可用
-  console.error('🚨 CRITICAL ERROR: In Vercel environment but KV is not available!');
-  console.error('🔧 KV Configuration:', {
-    KV_REST_API_URL: !!process.env.KV_REST_API_URL,
-    KV_REST_API_TOKEN: !!process.env.KV_REST_API_TOKEN,
-    KV_URL: !!process.env.KV_URL,
-  });
   throw new Error('KV database not available in Vercel environment');
 }
 
@@ -122,7 +93,6 @@ export async function addDomain(domain: Omit<Domain, 'id' | 'createdAt' | 'updat
   // 检查域名是否已存在
   const existingDomain = domains.find(d => d.name.toLowerCase() === domain.name.toLowerCase());
   if (existingDomain) {
-    console.log('⚠️ Domain already exists:', domain.name);
     throw new Error(`Domain "${domain.name}" already exists in the database`);
   }
   
@@ -130,17 +100,50 @@ export async function addDomain(domain: Omit<Domain, 'id' | 'createdAt' | 'updat
   
   const newDomain: Domain = {
     ...domain,
-    id: `domain-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    id: `domain-${generateId()}`,
     createdAt: now,
     updatedAt: now,
   };
   
-  console.log('➕ Adding new domain:', newDomain.name);
   domains.push(newDomain);
   await saveDomains(domains);
-  
-  console.log('✅ Domain added successfully:', newDomain.name);
   return newDomain;
+}
+
+export async function addDomainsBulk(
+  items: Omit<Domain, 'id' | 'createdAt' | 'updatedAt'>[]
+): Promise<{ added: Domain[]; skipped: string[] }> {
+  const domains = await getDomains();
+  const existing = new Set(domains.map((d) => d.name.toLowerCase()));
+  const added: Domain[] = [];
+  const skipped: string[] = [];
+  const now = new Date().toISOString();
+
+  for (const item of items) {
+    const name = item.name?.trim();
+    if (!name) continue;
+    if (existing.has(name.toLowerCase())) {
+      skipped.push(name);
+      continue;
+    }
+
+    const newDomain: Domain = {
+      ...item,
+      name,
+      id: `domain-${generateId()}`,
+      createdAt: now,
+      updatedAt: now,
+    };
+    domains.push(newDomain);
+    existing.add(name.toLowerCase());
+    added.push(newDomain);
+  }
+
+  if (added.length > 0) {
+    await saveDomains(domains);
+  }
+
+  return { added, skipped };
 }
 
 // 更新域名
@@ -175,54 +178,5 @@ export async function deleteDomain(id: string): Promise<boolean> {
   
   await saveDomains(filteredDomains);
   return true;
-}
-
-// 筛选和排序域名
-export function filterAndSortDomains(
-  domains: Domain[],
-  filters: FilterOptions = {},
-  sort: SortOption = 'expiry-asc'
-): Domain[] {
-  let result = [...domains];
-  
-  // 应用筛选
-  if (filters.registrar) {
-    result = result.filter(d => d.registrar === filters.registrar);
-  }
-  
-  if (filters.filingStatus) {
-    result = result.filter(d => d.filingStatus === filters.filingStatus);
-  }
-  
-  if (filters.searchQuery) {
-    const query = filters.searchQuery.toLowerCase();
-    result = result.filter(d => 
-      d.name.toLowerCase().includes(query) ||
-      d.registrar.toLowerCase().includes(query) ||
-      d.notes?.toLowerCase().includes(query)
-    );
-  }
-  
-  // 应用排序
-  result.sort((a, b) => {
-    switch (sort) {
-      case 'expiry-asc':
-        return new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime();
-      case 'expiry-desc':
-        return new Date(b.expiryDate).getTime() - new Date(a.expiryDate).getTime();
-      case 'name-asc':
-        return a.name.localeCompare(b.name);
-      case 'name-desc':
-        return b.name.localeCompare(a.name);
-      case 'created-asc':
-        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      case 'created-desc':
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      default:
-        return 0;
-    }
-  });
-  
-  return result;
 }
 

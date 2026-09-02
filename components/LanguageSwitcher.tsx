@@ -1,26 +1,21 @@
 'use client';
 
-import React from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { Languages } from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { usePathname, useRouter } from '@/i18n/navigation';
 
-interface LanguageSwitcherProps {
-  locale: string;
-}
-
-export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
+export function LanguageSwitcher() {
+  const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
 
-  const switchLanguage = (newLocale: string) => {
-    // 替换路径中的语言代码
-    const newPath = pathname.replace(`/${locale}`, `/${newLocale}`);
-    router.push(newPath);
+  const switchLanguage = (nextLocale: string) => {
+    router.replace(pathname, { locale: nextLocale });
   };
 
   return (
     <div className="flex items-center gap-1 bg-slate-100 rounded-md p-1">
       <button
+        type="button"
         onClick={() => switchLanguage('zh')}
         className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
           locale === 'zh'
@@ -31,6 +26,7 @@ export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
         中文
       </button>
       <button
+        type="button"
         onClick={() => switchLanguage('en')}
         className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
           locale === 'en'
@@ -43,4 +39,3 @@ export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
     </div>
   );
 }
-
