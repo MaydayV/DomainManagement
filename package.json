@@ -34,8 +34,8 @@
     "js-yaml": "4.3.2",
     "nanoid": "3.3.18",
     "postcss": "$postcss",
-    "brace-expansion@1": "1.1.18",
-    "brace-expansion@2": "2.1.4"
+    "brace-expansion@1": "1.1.21",
+    "brace-expansion@2": "2.1.7"
   },
   "engines": {
     "node": ">=20.9.0"
